@@ -1,0 +1,8 @@
+BasedOnStyle: Chromium
+IndentWidth: 4
+ColumnLimit: 120
+NamespaceIndentation: All
+AllowShortFunctionsOnASingleLine: None
+FixNamespaceComments: false
+SortIncludes: false
+AlignConsecutiveDeclarations: true
