@@ -2,15 +2,24 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run SDL2 app",
+      "name": "Run Kartoffel (macOS)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/main",
       "args": [],
       "cwd": "${workspaceFolder}",
       "MIMode": "lldb",
-
-      "preLaunchTask": "build-sdl2"  
+      "preLaunchTask": "build-sdl2"
+    },
+    {
+      "name": "Run Kartoffel (Windows)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/main",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "MIMode": "lldb",
+      "preLaunchTask": "build-sdl2"
     }
   ]
 }
