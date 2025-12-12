@@ -9,7 +9,7 @@
 #include "BoardLib.h"
 
 #ifdef _WIN64
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #else
 #include <SDL2/SDL.h>
 #endif

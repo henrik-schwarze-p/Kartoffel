@@ -2,24 +2,23 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Kartoffel (macOS)",
+      "name": "Run macOS",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/main",
       "args": [],
       "cwd": "${workspaceFolder}",
       "MIMode": "lldb",
-      "preLaunchTask": "build-sdl2"
+      "preLaunchTask": "Build (macOS)"
     },
     {
-      "name": "Run Kartoffel (Windows)",
+      "name": "Run Windows",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/main",
-      "args": [],
+      "program": "${workspaceFolder}/app.exe",
       "cwd": "${workspaceFolder}",
-      "MIMode": "lldb",
-      "preLaunchTask": "build-sdl2"
+      "console": "integratedTerminal",
+      "preLaunchTask": "Build (Windows)"
     }
   ]
 }

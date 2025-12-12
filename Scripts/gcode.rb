@@ -44,6 +44,9 @@ files = Dir.glob("#{source_dir}/App[A-Z]*").select { |f| File.file? f }.collect 
   { name: file[l..-5], file: file, prefix: file[l..-5][0].downcase + file[l + 1..-5], code: File.read(file) }
 end
 
+puts source_dir
+puts target_dir
+
 help = ""
 namespaces = ""
 files.each_with_index do |file, index|

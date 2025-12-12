@@ -415,7 +415,11 @@ int random(int r) {
 
 #include "Target.h"
 
+#ifdef _WIN64
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 #include "Kartoffel.h"
 

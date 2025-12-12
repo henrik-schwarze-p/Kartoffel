@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build (Windows)",
+            "type": "shell",
+            "command": "docker run --rm -v \"${workspaceFolder}:/work\" kartoffel  'x86_64-w64-mingw32-g++ -O2 -Wall -Wextra $CFLAGS  -ISource -o app.exe Source/*.cpp Apps/*.cpp $LDFLAGS $LIBS && cp -f \"$SDL2ROOT/bin/SDL2.dll\" ./'",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Build (macOS)",
+            "command": "/usr/bin/clang",
+            "args": [
+                "-fcolor-diagnostics",
+                "-fansi-escape-codes",
+                "-g",
+                "${workspaceFolder}/Source/*cpp",
+                "${workspaceFolder}/Apps/*.cpp",
+                "-I/opt/homebrew/include",
+                "-L/opt/homebrew/lib",
+                "-I${workspaceFolder}/Source",
+                "-lSDL2",
+                "-o",
+                "${workspaceFolder}/main"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
