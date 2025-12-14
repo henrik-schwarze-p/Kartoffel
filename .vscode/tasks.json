@@ -42,16 +42,7 @@
         {
             "label": "Build (Linux)",
             "type": "shell",
-            "command": "/usr/bin/g++",
-            "args": [
-                "-w",
-                "-ISource",
-                "-o",
-                "app.exe",
-                "Source/*.cpp",
-                "Apps/*.cpp",
-                "$(sdl2-config --cflags --libs)"
-            ],
+            "command": "g++ -w -ISource -o app Source/*.cpp Apps/*.cpp $(sdl2-config --cflags --libs)",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
