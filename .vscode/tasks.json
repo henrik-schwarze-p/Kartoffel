@@ -12,8 +12,8 @@
             "problemMatcher": "$gcc"
         },
         {
-            "type": "shell",
             "label": "Build (macOS)",
+            "type": "shell",
             "command": "/usr/bin/clang",
             "args": [
                 "-fcolor-diagnostics",
@@ -27,6 +27,30 @@
                 "-lSDL2",
                 "-o",
                 "${workspaceFolder}/main"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build (Linux)",
+            "type": "shell",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-w",
+                "-ISource",
+                "-o",
+                "app.exe",
+                "Source/*.cpp",
+                "Apps/*.cpp",
+                "$(sdl2-config --cflags --libs)"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
