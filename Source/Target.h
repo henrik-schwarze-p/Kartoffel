@@ -25,7 +25,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef __linux
 #define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 
 #define EPROM_SIZE 4096
 
@@ -97,7 +99,10 @@ unsigned int millis();
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef __linux
+
 #define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 
 #define EPROM_SIZE 4096
 
