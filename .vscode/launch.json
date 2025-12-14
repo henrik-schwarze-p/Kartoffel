@@ -19,6 +19,16 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "preLaunchTask": "Build (Windows)"
+    },
+    {
+      "name": "Run Linux",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/app",
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "Build (Linux)"
     }
   ]
 }
