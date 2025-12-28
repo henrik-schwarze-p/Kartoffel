@@ -343,7 +343,7 @@ namespace rcDialog {
             rcSwitch.setProtocol(1);
             rcSwitch.enableTransmit(config->port);
             rcSwitch.setProtocol(config->protocol);
-            rcSwitch.switchOn(config->group, 24);
+            rcSwitch.switchOn(config->group, config->number);
         }
     }
     void sendOff(RCConfig* config) {
