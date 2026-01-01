@@ -39,9 +39,10 @@
 
 // RC DIALOG
 
-namespace rcDialog {
-    RCConfig*   conf;
-    const char* name = 0;
+namespace rcDialog
+{
+    RCConfig *conf;
+    const char *name = 0;
 
     void (*screenCallback)();
 
@@ -54,49 +55,59 @@ namespace rcDialog {
     void groupOfCont2();
     void codes();
 
-    void configureOffCallback(int ok, long value) {
+    void configureOffCallback(int ok, long value)
+    {
         if (ok)
             conf->codeOff = (long)value;
         goToScreen(configureRC);
     }
 
-    void configureOff(int param) {
+    void configureOff(int param)
+    {
         showNumPad(PSTR("Off Code"), conf->codeOff, 0, 100000000, configureOffCallback);
     }
 
-    void configureOnCallback(int ok, long value) {
+    void configureOnCallback(int ok, long value)
+    {
         if (ok)
             conf->codeOn = (long)value;
         goToScreen(configureRC);
     }
 
-    void configureOn(int param) {
+    void configureOn(int param)
+    {
         showNumPad(PSTR("On Code"), conf->codeOn, 0, 100000000, configureOnCallback);
     }
 
-    void configureRCPortCallback(int port) {
+    void configureRCPortCallback(int port)
+    {
         if (port)
             conf->port = port;
         goToScreen(configureRC);
     }
 
-    void configureRCPort(int param) {
+    void configureRCPort(int param)
+    {
         showDigitalPortDialog(conf->port, configureRCPortCallback);
     }
 
-    void relay4(int port) {
-        if (port) {
+    void relay4(int port)
+    {
+        if (port)
+        {
             conf->type = RCCONFIG_TYPE_RELAY;
             conf->port = port;
         }
         goToScreen(relay);
     }
 
-    void relay3(int param) {
+    void relay3(int param)
+    {
         showDigitalPortDialog(conf->port, relay4);
     }
 
-    void relay() {
+    void relay()
+    {
         println(PSTR("The on/off state will be sentt to a digital pin. You can attach a Relay to this pin."));
         println();
         setBoldStyle();
@@ -111,7 +122,8 @@ namespace rcDialog {
     }
 
     // -------- ---------
-    void printRoman(int param) {
+    void printRoman(int param)
+    {
         if (param == 1)
             print(PSTR("I"));
         if (param == 2)
@@ -124,17 +136,20 @@ namespace rcDialog {
 
     // -------- GROUPS -----------
 
-    void numberCont2() {
+    void numberCont2()
+    {
         rcPrintConfig(conf, 1);
         toolbarAddScreenBack(configure);
     }
 
-    void numberOnCont(int param) {
+    void numberOnCont(int param)
+    {
         conf->number = param;
         goToScreen(numberCont2);
     }
 
-    void groupCont2() {
+    void groupCont2()
+    {
         print(PSTR("You chose group "));
         printRoman(conf->group);
         println(PSTR("."));
@@ -147,22 +162,26 @@ namespace rcDialog {
         toolbarAddScreenBack(groups);
     }
 
-    void groupCont(int param) {
+    void groupCont(int param)
+    {
         conf->group = param;
         goToScreen(groupCont2);
     }
 
-    void portCallback(int port) {
+    void portCallback(int port)
+    {
         if (port)
             conf->port = port;
         goToScreen(groups);
     }
 
-    void port(int param) {
+    void port(int param)
+    {
         showDigitalPortDialog(conf->port, portCallback);
     }
 
-    void groups() {
+    void groups()
+    {
         conf->type = RCCONFIG_TYPE_GROUPS;
         if (!conf->group)
             conf->group = 1;
@@ -177,46 +196,56 @@ namespace rcDialog {
         toolbarAddScreenBack(configure);
     }
 
-    void codesPortCallback(int port) {
+    void codesPortCallback(int port)
+    {
         if (port)
             conf->port = port;
         goToScreen(codes);
     }
 
-    void codesPort(int param) {
+    void codesPort(int param)
+    {
         showDigitalPortDialog(conf->port, codesPortCallback);
     }
 
-    void codesOnCallback(int succes, long value) {
-        if (succes) {
+    void codesOnCallback(int succes, long value)
+    {
+        if (succes)
+        {
             conf->codeOn = value;
         }
         goToScreen(codes);
     }
 
-    void codesOn(int param) {
+    void codesOn(int param)
+    {
         showNumPad(PSTR("Please set the code for On"), conf->codeOn, 0, 1000000000, codesOnCallback);
     }
 
-    void codesOffCallback(int succes, long value) {
-        if (succes) {
+    void codesOffCallback(int succes, long value)
+    {
+        if (succes)
+        {
             conf->codeOff = value;
         }
         goToScreen(codes);
     }
 
-    void codesOff(int param) {
+    void codesOff(int param)
+    {
         showNumPad(PSTR("Please set the code for Off"), conf->codeOff, 0, 1000000000, codesOffCallback);
     }
 
-    void protocol(int param) {
+    void protocol(int param)
+    {
         conf->protocol++;
         if (conf->protocol == 13)
             conf->protocol = 1;
         goToScreen(codes);
     }
 
-    void codes() {
+    void codes()
+    {
         conf->type = RCCONFIG_TYPE_CODES;
         if (!conf->codeOn)
             conf->codeOn = 12999333;
@@ -234,7 +263,8 @@ namespace rcDialog {
         toolbarAddScreenBack(configure);
     }
 
-    void configure() {
+    void configure()
+    {
         print(PSTR("You can configure the "));
         print(name);
         println(PSTR(" as one of the following:"));
@@ -251,17 +281,20 @@ namespace rcDialog {
         toolbarAddScreenBack(configureRC);
     }
 
-    void testOn(int param) {
+    void testOn(int param)
+    {
         rcSendOn(conf);
         goToScreen(configureRC);
     }
 
-    void testOff(int param) {
+    void testOff(int param)
+    {
         rcSendOff(conf);
         goToScreen(configureRC);
     }
 
-    void configureRC() {
+    void configureRC()
+    {
         print(PSTR("Do you want to configure the "));
         print(name);
         println(PSTR(" or to test it? "));
@@ -273,20 +306,28 @@ namespace rcDialog {
         toolbarAddScreenBack(screenCallback);
     }
 
-    void rcPrintConfig(RCConfig* rcconfig, int withTitle) {
-        if (rcconfig->type == RCCONFIG_TYPE_GROUPS) {
-            if (withTitle) {
+    void rcPrintConfigImpl(RCConfig *rcconfig, int withTitle)
+    {
+        if (rcconfig->type == RCCONFIG_TYPE_GROUPS)
+        {
+            if (withTitle)
+            {
                 print(PSTR("* Switch configured as "));
                 setBoldStyle();
                 print(PSTR("Groups "));
                 setNormalStyle();
+                println();
             }
+            addPrintX(12);
             print(PSTR("Configuration: "));
             printRoman(rcconfig->group);
             print(PSTR("/"));
             println(rcconfig->number);
-        } else if (rcconfig->type == RCCONFIG_TYPE_CODES) {
-            if (withTitle) {
+        }
+        else if (rcconfig->type == RCCONFIG_TYPE_CODES)
+        {
+            if (withTitle)
+            {
                 print(PSTR("* Switch configured as "));
                 setBoldStyle();
                 println(PSTR("Codes"));
@@ -296,70 +337,97 @@ namespace rcDialog {
             println(rcconfig->codeOn);
             print(PSTR("Off Code: "));
             println(rcconfig->codeOff);
-        } else if (rcconfig->type == RCCONFIG_TYPE_RELAY) {
-            if (withTitle) {
+        }
+        else if (rcconfig->type == RCCONFIG_TYPE_RELAY)
+        {
+            if (withTitle)
+            {
                 print(PSTR("* Switch configured as "));
                 setBoldStyle();
                 println(PSTR("Relay"));
                 setNormalStyle();
             }
-        } else {
+        }
+        else
+        {
             println(PSTR("* Switch currently not configured."));
             println();
         }
         // indent
         addPrintX(12);
-        if (rcconfig->type != RCCONFIG_TYPE_NOT_CONFIGURED) {
-            if (rcconfig->port) {
+        if (rcconfig->type != RCCONFIG_TYPE_NOT_CONFIGURED)
+        {
+            if (rcconfig->port)
+            {
                 print(PSTR("Switch Pin: "));
                 println(rcconfig->port);
-            } else {
+            }
+            else
+            {
                 println(PSTR("Pin not set."));
             }
         }
         addPrintX(12);
-        if (rcConfigured(rcconfig)) {
-            if (rcconfig->on) {
+        if (rcConfigured(rcconfig))
+        {
+            if (rcconfig->on)
+            {
                 cprintln(PSTR("The device is ON"));
-            } else {
+            }
+            else
+            {
                 cprintln(PSTR("The device is OFF"));
             }
         }
     }
-    void sendOn(RCConfig* config) {
+    void sendOn(RCConfig *config)
+    {
         config->on = true;
-        if (config->type == RCCONFIG_TYPE_RELAY) {
+        if (config->type == RCCONFIG_TYPE_RELAY)
+        {
             pinMode(config->port, OUTPUT);
             pmDigitalWrite(config->port, 1);
-        } else if (config->type == RCCONFIG_TYPE_CODES) {
+        }
+        else if (config->type == RCCONFIG_TYPE_CODES)
+        {
             rcSwitch.enableTransmit(config->port);
             rcSwitch.setProtocol(config->protocol);
             int bits = 24;
-            if (config->codeOn >= 16777216) {
+            if (config->codeOn >= 16777216)
+            {
                 bits = 32;
             }
             rcSwitch.send(config->codeOn, bits);
-        } else {
+        }
+        else
+        {
             rcSwitch.setProtocol(1);
             rcSwitch.enableTransmit(config->port);
             rcSwitch.setProtocol(config->protocol);
             rcSwitch.switchOn(config->group, config->number);
         }
     }
-    void sendOff(RCConfig* config) {
+    void sendOff(RCConfig *config)
+    {
         config->on = false;
-        if (config->type == RCCONFIG_TYPE_RELAY) {
+        if (config->type == RCCONFIG_TYPE_RELAY)
+        {
             pinMode(config->port, OUTPUT);
             pmDigitalWrite(config->port, 0);
-        } else if (config->type == RCCONFIG_TYPE_CODES) {
+        }
+        else if (config->type == RCCONFIG_TYPE_CODES)
+        {
             rcSwitch.enableTransmit(config->port);
             rcSwitch.setProtocol(config->protocol);
             int bits = 24;
-            if (config->codeOff >= 16777216) {
+            if (config->codeOff >= 16777216)
+            {
                 bits = 32;
             }
             rcSwitch.send(config->codeOff, bits);
-        } else {
+        }
+        else
+        {
             rcSwitch.setProtocol(1);
             rcSwitch.enableTransmit(config->port);
             rcSwitch.switchOff(config->group, config->number);
@@ -367,33 +435,39 @@ namespace rcDialog {
     }
 }
 
-void rcPrintConfig(RCConfig* rcconfig, int withTitle) {
-    rcDialog::rcPrintConfig(rcconfig, withTitle);
+void rcPrintConfig(RCConfig *rcconfig, int withTitle)
+{
+    rcDialog::rcPrintConfigImpl(rcconfig, withTitle);
 }
 
-int rcConfigured(RCConfig* config) {
+int rcConfigured(RCConfig *config)
+{
     int c = config->type == RCCONFIG_TYPE_GROUPS && config->group && config->number;
     c += config->type == RCCONFIG_TYPE_CODES && config->codeOn && config->codeOff;
     c += config->type == RCCONFIG_TYPE_RELAY;
     return c && config->port;
 }
 
-void rcSendOn(RCConfig* config) {
+void rcSendOn(RCConfig *config)
+{
     rcDialog::sendOn(config);
 }
 
-void rcSendOff(RCConfig* config) {
+void rcSendOff(RCConfig *config)
+{
     rcDialog::sendOff(config);
 }
 
-void showRCDialog(RCConfig* rcconfig, const char* name, void (*callback)()) {
+void showRCDialog(RCConfig *rcconfig, const char *name, void (*callback)())
+{
     rcDialog::name = name;
     rcDialog::conf = rcconfig;
     rcDialog::screenCallback = callback;
     goToScreen(rcDialog::configureRC);
 }
 
-void rcInitCodes(RCConfig* config, char port, unsigned long codeOn, unsigned long codeOff, int protocol) {
+void rcInitCodes(RCConfig *config, char port, unsigned long codeOn, unsigned long codeOff, int protocol)
+{
     rcInit(config);
     config->protocol = protocol;
     config->type = RCCONFIG_TYPE_CODES;
@@ -402,7 +476,8 @@ void rcInitCodes(RCConfig* config, char port, unsigned long codeOn, unsigned lon
     config->codeOff = codeOff;
 }
 
-void rcInitGroups(RCConfig* config, char port, char group, char number) {
+void rcInitGroups(RCConfig *config, char port, char group, char number)
+{
     rcInit(config);
     config->type = RCCONFIG_TYPE_GROUPS;
     config->port = port;
@@ -410,13 +485,15 @@ void rcInitGroups(RCConfig* config, char port, char group, char number) {
     config->number = number;
 }
 
-void rcInitRelay(RCConfig* config, char port) {
+void rcInitRelay(RCConfig *config, char port)
+{
     rcInit(config);
     config->type = RCCONFIG_TYPE_RELAY;
     config->port = port;
 }
 
-void rcInit(RCConfig* config) {
+void rcInit(RCConfig *config)
+{
     config->type = 0;
     config->port = 0;
     config->group = 0;
@@ -428,14 +505,17 @@ void rcInit(RCConfig* config) {
     config->on = 0;
 }
 
-int rcState(RCConfig* config) {
+int rcState(RCConfig *config)
+{
     return config->port + (int)config->codeOn + (int)config->codeOff;
 }
 
-int rcOnEnabled(RCConfig* config) {
+int rcOnEnabled(RCConfig *config)
+{
     return config->port && config->codeOn;
 }
 
-int rcOffEnabled(RCConfig* config) {
+int rcOffEnabled(RCConfig *config)
+{
     return config->port && config->codeOff;
 }

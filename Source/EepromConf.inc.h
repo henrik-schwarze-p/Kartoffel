@@ -1,2 +1,2 @@
 const PROGMEM unsigned char eepromConfiguration[] = {0xFE};
-const unsigned char randomBits[]={17,97};
+const unsigned char randomBits[]={222,207};
