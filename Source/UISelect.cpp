@@ -11,6 +11,7 @@
 #include "UI.h"
 #include "Namespaces.h"
 #include "Text.h"
+#include "Repainter.h"
 
 extern char ramSource[];
 
@@ -55,8 +56,7 @@ namespace selectNS {
     void goLeftOrRight(int param) {
         page += param;
         selected = page * cols * rows;
-        // TODO
-        // repaint();
+        repaint();
         //        repaintScreen(screenSelect, 0);
     }
 
