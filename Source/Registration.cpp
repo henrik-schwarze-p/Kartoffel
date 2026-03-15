@@ -64,9 +64,9 @@ void pgregister(void* a, int size) {
         fatalError(36, 0);
     for (int i = 0; i < size; i++)
         if (_registerMode == MODE_UNSERIALIZE_PERSISTENT_VARS)
-            ((unsigned char*)a)[i] = pget(_registerPersistentSize + i);
+            ((unsigned char*)a)[i] = readMainData(_registerPersistentSize + i);
         else if (_registerMode == MODE_SERIALIZE_PERSISTENT_VARS)
-            pset(_registerPersistentSize + i, ((unsigned char*)a)[i]);
+            setDataMain(_registerPersistentSize + i, ((unsigned char*)a)[i]);
     _registerPersistentSize += size;
 }
 

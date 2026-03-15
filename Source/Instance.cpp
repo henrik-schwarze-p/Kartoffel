@@ -155,9 +155,9 @@ void removeInstanceAt(int instance) {
     removeStatusForInstance(instance, STATUS_REGISTERM_ACTIVATED);
     removeStatusForInstance(instance, STATUS_REGISTERP_ACTIVATED);
     switchContextToInstance(instance);
-    freeAllChunks();
+    freeAllChunksForActiveInstance();
     freeAllHeaps();
-    decreaseInstanceOffset();
+    decreaseChunksInstances();
     popContext();
 
     int n = numberOfInstances();
@@ -170,7 +170,6 @@ void removeInstanceAt(int instance) {
     if (activeInstance > instance)
         activeInstance--;
     updateRulesBecauseOfDeletionOfInstance(instance);
-    _mergeChunks();
 }
 
 // Pushes the active instance and makes a context switch to instance
@@ -312,7 +311,7 @@ void callWhenDestroyed(int instance) {
 }
 
 void callRegisterDirectly(int instance, int mode) {
-    // todo: porque no switch
+    // todo: why no switch
     startRegisterMode(mode);
     callGeneratedRegisterVars(instance);
     endRegisterMode();

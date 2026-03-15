@@ -67,25 +67,25 @@ namespace aqualog {
         if (memory < 30)
             fatalError(38, memory);
         allocChunk(LOG_HANDLE, memory);
-        pset(LOG_HANDLE, LOG_VERSION, 0x0A + size - 1);
-        pset(LOG_HANDLE, 1, LOG_START);
-        pset(LOG_HANDLE, 2, epochSecs() / 251 / 251 / 251);
-        pset(LOG_HANDLE, 3, epochSecs() / 251 / 251 % 251);
-        pset(LOG_HANDLE, 4, epochSecs() / 251 % 251);
-        pset(LOG_HANDLE, 5, epochSecs() % 251);
-        pset(LOG_HANDLE, 6, LOG_END);
+        setData(LOG_HANDLE, LOG_VERSION, 0x0A + size - 1);
+        setData(LOG_HANDLE, 1, LOG_START);
+        setData(LOG_HANDLE, 2, epochSecs() / 251 / 251 / 251);
+        setData(LOG_HANDLE, 3, epochSecs() / 251 / 251 % 251);
+        setData(LOG_HANDLE, 4, epochSecs() / 251 % 251);
+        setData(LOG_HANDLE, 5, epochSecs() % 251);
+        setData(LOG_HANDLE, 6, LOG_END);
     }
 
     int chunkIsEmpty() {
-        return chunkSize(LOG_HANDLE) == 7;
+        return chunkDataSizeForHandle(LOG_HANDLE) == 7;
     }
 
     int offsetDeltaed(int offset, int delta) {
         offset += delta;
         if (offset < 1)
-            offset += chunkSize(LOG_HANDLE) - 1;
-        if (offset > chunkSize(LOG_HANDLE) - 1)
-            offset -= chunkSize(LOG_HANDLE) - 1;
+            offset += chunkDataSizeForHandle(LOG_HANDLE) - 1;
+        if (offset > chunkDataSizeForHandle(LOG_HANDLE) - 1)
+            offset -= chunkDataSizeForHandle(LOG_HANDLE) - 1;
         return offset;
     }
 
@@ -94,31 +94,31 @@ namespace aqualog {
     }
 
     int endOffset() {
-        for (int i = 1; i < chunkSize(LOG_HANDLE); i++)
-            if (pget(LOG_HANDLE, i) == LOG_END)
+        for (int i = 1; i < chunkDataSizeForHandle(LOG_HANDLE); i++)
+            if (readData(LOG_HANDLE, i) == LOG_END)
                 return i;
         fatalError(39, 0);
         return 0;
     }
 
     int startOffset() {
-        for (int i = 0; i < chunkSize(LOG_HANDLE); i++)
-            if (pget(LOG_HANDLE, i) == LOG_START)
+        for (int i = 0; i < chunkDataSizeForHandle(LOG_HANDLE); i++)
+            if (readData(LOG_HANDLE, i) == LOG_START)
                 return i;
         fatalError(40, 0);
         return 0;
     }
 
     unsigned char logValue(int offset, int offsetDelta) {
-        return pget(LOG_HANDLE, offsetDeltaed(offset, offsetDelta));
+        return readData(LOG_HANDLE, offsetDeltaed(offset, offsetDelta));
     }
 
     unsigned char logValue(int offsetDelta) {
-        return pget(LOG_HANDLE, offsetDeltaed(currentOffset, offsetDelta));
+        return readData(LOG_HANDLE, offsetDeltaed(currentOffset, offsetDelta));
     }
 
     void setLogValue(int offset, int offsetDelta, unsigned char value) {
-        pset(LOG_HANDLE, offsetDeltaed(offset, offsetDelta), value);
+        setData(LOG_HANDLE, offsetDeltaed(offset, offsetDelta), value);
     }
 
     unsigned long lastLogInSeconds() {

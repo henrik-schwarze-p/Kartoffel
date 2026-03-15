@@ -131,8 +131,8 @@ void dumpChunks() {
     }
     col2();
     boardPrintln("Unused");
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
+    int _chunk = firstChunkAddress();
+    while (!atEndOfChunks(_chunk)) {
         printOffset(_chunk);
         printEE(_chunk);
         printEE(_chunk + 1);
@@ -218,12 +218,11 @@ void dumpChunks() {
         } else if (chunkInstance(_chunk) == 255) {
             printOffset(_chunk + 4);
             col2();
-            boardPrint("Next offset should be 0x1000 ");
         } else {
             printOffset(_chunk + 4);
             int max = 0;
-            int l = nextChunk(_chunk) - _chunk;
-            for (int i = P_OVERHEAD; i < l; i++) {
+            int l = nextChunkAddress(_chunk) - _chunk;
+            for (int i = P_DATA; i < l; i++) {
                 if (max == 8) {
                     max = 0;
                     boardPrintln("");
@@ -235,7 +234,7 @@ void dumpChunks() {
             col2();
         }
         boardPrintln("");
-        _chunk = nextChunk(_chunk);
+        _chunk = nextChunkAddress(_chunk);
     }
     printOffset(_chunk);
 }

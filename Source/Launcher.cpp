@@ -87,7 +87,7 @@ void launchAll() {
     writeByteToEEPROM(PERSISTANT_HEAP_ADDRESS + P_INSTANCE, UNUSED_CHUNK);
     writeByteToEEPROM(PERSISTANT_HEAP_ADDRESS + P_HANDLE, 0);
     writeIntToEEPROM(PERSISTANT_HEAP_ADDRESS + P_SIZE,
-                     (unsigned int)(EPROM_SIZE - PERSISTANT_HEAP_ADDRESS - P_OVERHEAD));
+                     (unsigned int)(EPROM_SIZE - PERSISTANT_HEAP_ADDRESS - P_DATA));
 
     writeByteToEEPROM(EPROM_RANDOM, randomBits[0]);
     writeByteToEEPROM(EPROM_RANDOM + 1, randomBits[1]);

@@ -150,7 +150,7 @@ void addLabel(int x, int y, const char* _label, int width, int height, int color
 }
 
 void addLabel(int x, int y, int instance, int handle, int width, int height, int color, int style, int suffix) {
-    int address = chunkAddressForInstanceAndHandle(instance, handle);
+    int address = chunkDataAddressForInstanceAndHandle(instance, handle);
     setPrintModeEEPROM(address);
     int strWidth = stringWidth();
     if (style & STYLE_BIGFONT)

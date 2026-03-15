@@ -58,7 +58,7 @@ Axon notFoundAxon()
 Axon axonForAddress(int axonAddress)
 {
     // what is the first byte of the axon
-    int head = pget(RULES_HANDLE, axonAddress);
+    int head = readData(RULES_HANDLE, axonAddress);
 
     Axon a;
     a.isEnd = head == AX_END;
@@ -73,8 +73,8 @@ Axon axonForAddress(int axonAddress)
 
     a.headValue = head;
     a.address = axonAddress;
-    a.instance = pget(RULES_HANDLE, axonAddress + AX_INSTANCE_OFFSET);
-    a.kind = pget(RULES_HANDLE, axonAddress + AX_KIND_OFFSET);
+    a.instance = readData(RULES_HANDLE, axonAddress + AX_INSTANCE_OFFSET);
+    a.kind = readData(RULES_HANDLE, axonAddress + AX_KIND_OFFSET);
 
     a.numberOfParams = numberOfParams(a);
     a.label = axonLabel(a);
@@ -83,7 +83,7 @@ Axon axonForAddress(int axonAddress)
     {
         int index = axonAddress + AX_PARAMS_OFFSET + i * sizeof(uint16_t);
         // we have to work under different architectures
-        a.params[i] = pget(RULES_HANDLE, index) * 256 + pget(RULES_HANDLE, index + 1);
+        a.params[i] = readData(RULES_HANDLE, index) * 256 + readData(RULES_HANDLE, index + 1);
     }
     a.length = AX_PARAMS_OFFSET + a.numberOfParams * sizeof(uint16_t);
 
@@ -144,7 +144,7 @@ Axon insertAxon(int index, int isCondition, int instance, int kind)
 
     Axon existingAxon = axonForIndex(index);
     a.address = existingAxon.address;
-    insertChunkFragment(RULES_HANDLE, existingAxon.address, a.length);
+    insertChunkDataSegment(RULES_HANDLE, existingAxon.address, a.length);
     writeAxon(a);
     return a;
 }
@@ -201,15 +201,15 @@ Axon axonForIndex(int axonIndex)
 void writeAxon(Axon a)
 {
     int writeAddress = a.address;
-    pset(RULES_HANDLE, writeAddress++, a.headValue);
+    setData(RULES_HANDLE, writeAddress++, a.headValue);
     if (a.isEnd)
         return;
-    pset(RULES_HANDLE, writeAddress++, a.instance);
-    pset(RULES_HANDLE, writeAddress++, a.kind);
+    setData(RULES_HANDLE, writeAddress++, a.instance);
+    setData(RULES_HANDLE, writeAddress++, a.kind);
     for (int i = 0; i < a.numberOfParams; i++)
     {
-        pset(RULES_HANDLE, writeAddress++, a.params[i] / 256);
-        pset(RULES_HANDLE, writeAddress++, a.params[i] % 256);
+        setData(RULES_HANDLE, writeAddress++, a.params[i] / 256);
+        setData(RULES_HANDLE, writeAddress++, a.params[i] % 256);
     }
 }
 
@@ -266,7 +266,7 @@ void insertCondition(int axonIndex, int globalAxonIndex)
 void deleteAxon(int axonIndex)
 {
     Axon axon = axonForIndex(axonIndex);
-    deleteChunkFragment(RULES_HANDLE, axon.address, axon.length);
+    deleteChunkSegment(RULES_HANDLE, axon.address, axon.length);
 }
 
 // LABELS
@@ -361,12 +361,12 @@ int toolbarLabelForParameter2(const char *text, int index)
 
 int thereIsAnActiveCC()
 {
-    return pget(RULES_HANDLE, AX_ACTIVE) != 255;
+    return readData(RULES_HANDLE, AX_ACTIVE) != 255;
 }
 
 Axon activeCC()
 {
-    int active = pget(RULES_HANDLE, AX_ACTIVE);
+    int active = readData(RULES_HANDLE, AX_ACTIVE);
     if (active == 255)
         return notFoundAxon();
     return axonForIndex(active);
@@ -374,12 +374,12 @@ Axon activeCC()
 
 int indexOfActiveCC()
 {
-    return pget(RULES_HANDLE, AX_ACTIVE);
+    return readData(RULES_HANDLE, AX_ACTIVE);
 }
 
 void setActiveCC(Axon cc)
 {
-    pset(RULES_HANDLE, AX_ACTIVE, indexOfAxon(cc));
+    setData(RULES_HANDLE, AX_ACTIVE, indexOfAxon(cc));
 }
 
 // KKK
@@ -470,8 +470,8 @@ int rulesReference(int instance)
 int rulesUsingInstance(int instance)
 {
     int result = 0;
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk))
+    int _chunk = firstChunkAddress();
+    while (!atEndOfChunks(_chunk))
     {
         if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK &&
             chunkInstance(_chunk) != instance)
@@ -480,7 +480,7 @@ int rulesUsingInstance(int instance)
             result += rulesReference(instance);
             popContext();
         }
-        _chunk = nextChunk(_chunk);
+        _chunk = nextChunkAddress(_chunk);
     }
     return result;
 }
@@ -490,8 +490,8 @@ int rulesUsingInstance(int instance)
  */
 void updateRulesBecauseOfDeletionOfInstance(int instance)
 {
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk))
+    int _chunk = firstChunkAddress();
+    while (!atEndOfChunks(_chunk))
     {
         if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK)
         {
@@ -499,15 +499,15 @@ void updateRulesBecauseOfDeletionOfInstance(int instance)
             instanceWasRemoved(instance);
             popContext();
         }
-        _chunk = nextChunk(_chunk);
+        _chunk = nextChunkAddress(_chunk);
     }
 }
 
 void createRulesChunk()
 {
     allocChunk(RULES_HANDLE, 2);
-    pset(RULES_HANDLE, 0, 255);
-    pset(RULES_HANDLE, AX_FIRST_AXON_ADDRESS, AX_END);
+    setData(RULES_HANDLE, 0, 255);
+    setData(RULES_HANDLE, AX_FIRST_AXON_ADDRESS, AX_END);
 }
 
 // TESTS
@@ -526,10 +526,10 @@ int axonDumpEq(const char *c)
     strcpy(r, "");
     for (int i = 0; i < 1000; i++)
     {
-        snprintf(s, 99, "%02x", pget(RULES_HANDLE, i));
+        snprintf(s, 99, "%02x", readData(RULES_HANDLE, i));
         strcat(r, s);
         strcat(r, " ");
-        if (pget(RULES_HANDLE, i) == 0xED)
+        if (readData(RULES_HANDLE, i) == 0xED)
         {
             int eq = !strcmp(c, r);
             if (!eq)

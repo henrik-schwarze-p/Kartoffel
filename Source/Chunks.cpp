@@ -14,312 +14,339 @@
 
  0           INSTANCE (FF==unused)
  1           HANDLE
- 2,3         SIZE (the empty chunk may use 2 bytes...)
+ 2,3         SIZE (the empty chunk length may use 2 bytes...)
  4           BEGIN OF DATA
  4+SIZE-1    END OF DATA
 
  4+SIZE      NEXT CHUNK
 
  That is, we have 4 bytes overhead per chunk.
+
+ Chunks use always the whole memory available. That means that the last chunk
+ has a datasize big enough that its last byte is at the end of the EEPROM.
  */
 
-// ALL THE METHODS WORK FOR THE ACTIVE INSTANCE
+// ALL THE FUNCTIONS WORK FOR THE ACTIVE INSTANCE
 
-int goToFirstChunk() {
+// All chunks have an absoute address, that is used by most functions.
+// I denote <chunkAddress> as the chunk starting at address chunkAddress.
+
+// Address of first chunk in memory
+int firstChunkAddress() {
     return PERSISTANT_HEAP_ADDRESS;
 }
 
-int endOfChunks(int _chunk) {
-    return _chunk >= EPROM_SIZE;
+// the address of the next chunk relative to <chunkAddress>
+int nextChunkAddress(int chunkAddress) {
+    return chunkAddress + chunkDataSize(chunkAddress) + P_DATA;
 }
 
-int nextChunk(int _chunk) {
-    return _chunk + readIntFromEEPROM(_chunk + P_SIZE) + P_OVERHEAD;
+// tests if the result of nextChunkAddress is still a valid chunk
+int atEndOfChunks(int chunkAddress) {
+    // == should be enough, but just to be sure...
+    return chunkAddress >= EPROM_SIZE;
 }
 
-uint8_t _chunkData(int _chunk, int i) {
-    return readByteFromEEPROM(_chunk + P_OVERHEAD + i);
+// the instance of <chunkAddress>, FF means unused chunk
+uint8_t chunkInstance(int chunkAddress) {
+    return readByteFromEEPROM(chunkAddress + P_INSTANCE);
 }
 
-uint8_t chunkInstance(int _chunk) {
-    return readByteFromEEPROM(_chunk + P_INSTANCE);
+// the handle of <chunkAddress>. Handles are given by the user!
+uint8_t chunkHandle(int chunkAddress) {
+    return readByteFromEEPROM(chunkAddress + P_HANDLE);
 }
 
-uint8_t chunkHandle(int _chunk) {
-    return readByteFromEEPROM(_chunk + P_HANDLE);
+// no instance is using this <chunkAddress>?
+int chunkUnused(int chunkAddress) {
+    return readByteFromEEPROM(chunkAddress + P_INSTANCE) == UNUSED_CHUNK;
 }
 
-int _chunkUnused(int _chunk) {
-    return readByteFromEEPROM(_chunk + P_INSTANCE) == UNUSED_CHUNK;
+// how big is the data portion of the <chunkAddress>?
+// it is not the size of the <chunkAddress>!
+int chunkDataSize(int chunkAddress) {
+    return readIntFromEEPROM(chunkAddress + P_SIZE);
 }
 
-int _chunkSize(int _chunk) {
-    return readIntFromEEPROM(_chunk + P_SIZE);
+// chunk data size for a given handle for the active instance
+unsigned int chunkDataSizeForHandle(int handle) {
+    int chunkAddress = chunkAddressForHandle(handle);
+    return readIntFromEEPROM(chunkAddress + P_SIZE);
 }
 
+// is there a chunk for the given instance and handle?
 int chunkForInstanceAndHandleExists(int instance, int handle) {
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
-        if (chunkHandle(_chunk) == handle && chunkInstance(_chunk) == instance)
+    int chunkAddress = firstChunkAddress();
+    while (!atEndOfChunks(chunkAddress)) {
+        if (chunkHandle(chunkAddress) == handle && chunkInstance(chunkAddress) == instance)
             return 1;
-        _chunk = nextChunk(_chunk);
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
     return 0;
 }
 
+// is there a chunk for the given handle and active instance?
 int chunkForHandleExists(int handle) {
     return chunkForInstanceAndHandleExists(getActiveInstance(), handle);
 }
 
-int chunkForHandle(int handle) {
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
-        if (chunkHandle(_chunk) == handle && chunkInstance(_chunk) == getActiveInstance())
-            return _chunk;
-        _chunk = nextChunk(_chunk);
+// the chunk address for the handle of the active instance
+int chunkAddressForHandle(int handle) {
+    int chunkAddress = firstChunkAddress();
+    while (!atEndOfChunks(chunkAddress)) {
+        if (chunkHandle(chunkAddress) == handle && chunkInstance(chunkAddress) == getActiveInstance())
+            return chunkAddress;
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
     fatalError(31, handle);
     return 0;
 }
 
-// This breaks encapsulation, use with care
 // Returns the address of the data, not the beginning of the chunk
-int chunkAddressForInstanceAndHandle(int instance, int handle) {
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
-        if (chunkHandle(_chunk) == handle && chunkInstance(_chunk) == instance)
-            return _chunk + P_OVERHEAD;
-        _chunk = nextChunk(_chunk);
+int chunkDataAddressForInstanceAndHandle(int instance, int handle) {
+    int chunkAddress = firstChunkAddress();
+    while (!atEndOfChunks(chunkAddress)) {
+        if (chunkHandle(chunkAddress) == handle && chunkInstance(chunkAddress) == instance)
+            return chunkAddress + P_DATA;
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
     fatalError(32, handle);
     return 0;
 }
 
-// Called when instance destroyed
-void freeAllChunks() {
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
-        if (chunkInstance(_chunk) == getActiveInstance())
-            writeByteToEEPROM(_chunk + P_INSTANCE, UNUSED_CHUNK);
-        _chunk = nextChunk(_chunk);
+// Frees all chunks for the active instance and merge the unused
+void freeAllChunksForActiveInstance() {
+    int chunkAddress = firstChunkAddress();
+    while (!atEndOfChunks(chunkAddress)) {
+        if (chunkInstance(chunkAddress) == getActiveInstance())
+            writeByteToEEPROM(chunkAddress + P_INSTANCE, UNUSED_CHUNK);
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
+    mergeUnusedChunks();
 }
 
 // All chunks that have an instance value > activeInstance,
 // are decreased by 1
-void decreaseInstanceOffset() {
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
-        if (chunkInstance(_chunk) > getActiveInstance() && !_chunkUnused(_chunk))
-            writeByteToEEPROM(_chunk + P_INSTANCE, chunkInstance(_chunk) - 1);
-        _chunk = nextChunk(_chunk);
+void decreaseChunksInstances() {
+    int chunkAddress = firstChunkAddress();
+    while (!atEndOfChunks(chunkAddress)) {
+        if (chunkInstance(chunkAddress) > getActiveInstance() && !chunkUnused(chunkAddress))
+            writeByteToEEPROM(chunkAddress + P_INSTANCE, chunkInstance(chunkAddress) - 1);
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
 }
 
-unsigned int availablePersistantHeap() {
+// how much data space is there (it is an estimation, the real size may be a few bytes bigger)
+unsigned int availableDataMemory() {
     int r = 0;
-    int _chunk = goToFirstChunk();
-    while (!endOfChunks(_chunk)) {
-        if (_chunkUnused(_chunk))
-            r += _chunkSize(_chunk);
-        _chunk = nextChunk(_chunk);
+    int chunkAddress = firstChunkAddress();
+    while (!atEndOfChunks(chunkAddress)) {
+        if (chunkUnused(chunkAddress))
+            r += chunkDataSize(chunkAddress);
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
     return r;
 }
 
-unsigned int chunkSize(int handle) {
-    int p = chunkForHandle(handle);
-    if (!p)
-        return 0;
-    return readIntFromEEPROM(p + P_SIZE);
-}
-
-// Returns 1 for success, 0 for no mem
-unsigned int _allocChunk(int handle, int size) {
+// tries to alloc a chunk for a given data size for the active instance
+// throws fatal error if no space
+void allocChunk(int handle, int dataSize) {
     // find an unused chunk bigger than size
-    int _chunk = goToFirstChunk();
-    int psize = 0;
-    while (!endOfChunks(_chunk)) {
-        psize = _chunkSize(_chunk);
-        if (_chunkUnused(_chunk) && size + 2 * P_OVERHEAD <= psize)  // overhead + overhead for empty chunk
+    int chunkAddress = firstChunkAddress();
+    int recycledChunkDataSize = 0;
+    while (!atEndOfChunks(chunkAddress)) {
+        recycledChunkDataSize = chunkDataSize(chunkAddress);
+        if (chunkUnused(chunkAddress) && dataSize + 2 * P_DATA <= recycledChunkDataSize)  // overhead + overhead for empty chunk
             break;
-        _chunk = nextChunk(_chunk);
+        chunkAddress = nextChunkAddress(chunkAddress);
     }
-    if (endOfChunks(_chunk)) {
+    if (atEndOfChunks(chunkAddress)) {
         addStatusForInstance(STATUS_NO_MEMORY);
         fatalError(33, handle);
-        return 0;
     }
-    // we break the unused chunk into a used an unused one
-    writeByteToEEPROM(_chunk, getActiveInstance());
-    writeByteToEEPROM(_chunk + P_HANDLE, handle);
-    writeIntToEEPROM(_chunk + P_SIZE, size);
-    int u = _chunk + P_OVERHEAD + size;
+    // we break the unused chunk to be recycled into a used an unused one
+    writeByteToEEPROM(chunkAddress, getActiveInstance());
+    writeByteToEEPROM(chunkAddress + P_HANDLE, handle);
+    writeIntToEEPROM(chunkAddress + P_SIZE, dataSize);
+
+    int u = chunkAddress + P_DATA + dataSize;
     writeByteToEEPROM(u, UNUSED_CHUNK);
     writeByteToEEPROM(u + P_HANDLE, (unsigned int)0);
-    writeIntToEEPROM(u + P_SIZE, (unsigned int)(psize - size - P_OVERHEAD));
-    return handle;
+    writeIntToEEPROM(u + P_SIZE, (unsigned int)(recycledChunkDataSize - dataSize - P_DATA));
+
+    // handy sometimes, we initialize the data
+    if (dataSize)
+        setData(handle, 0, 0);
 }
 
-// Merges contigual chunks without owners...
+
+// Merges contiguous unused chunks.
 // Not very efficient from the point of view of the algorithm, but it is more
 // simple AND the part that spends the time is anyway modifying the EEPROM, not
 // reading it.
-void _mergeChunks() {
+void mergeUnusedChunks() {
     int atLeastOneMerged = 1;
     while (atLeastOneMerged) {
         atLeastOneMerged = 0;
-        int lastChunk = 0;
-        int _chunk = goToFirstChunk();
-        while (!endOfChunks(_chunk)) {
-            if (lastChunk && readByteFromEEPROM(lastChunk + P_INSTANCE) == UNUSED_CHUNK && _chunkUnused(_chunk)) {
-                writeIntToEEPROM(lastChunk + P_SIZE,
-                                 readIntFromEEPROM(lastChunk + P_SIZE) + _chunkSize(_chunk) + P_OVERHEAD);
+        int lastChunkAddress = 0;
+        int chunkAddress = firstChunkAddress();
+        while (!atEndOfChunks(chunkAddress)) {
+            if (lastChunkAddress && chunkUnused(lastChunkAddress) && chunkUnused(chunkAddress)) {
+                writeIntToEEPROM(lastChunkAddress + P_SIZE,
+                                 chunkDataSize(lastChunkAddress) + chunkDataSize(chunkAddress) + P_DATA);
                 atLeastOneMerged = 1;
                 break;
             }
-            lastChunk = _chunk;
-            _chunk = nextChunk(_chunk);
+            lastChunkAddress = chunkAddress;
+            chunkAddress = nextChunkAddress(chunkAddress);
         }
     }
 }
 
-// The public alloc chunk, takes care of fragmenting
-unsigned int allocChunk(int handle, int size) {
-    int r = _allocChunk(handle, size);
-    if (size)
-        pset(handle, 0, 0);
-    _mergeChunks();
-    return r;
+// frees a chunk for the given handle for the active instance
+void freeChunk(int handle) {
+    int chunkAddress = chunkAddressForHandle(handle);
+    writeByteToEEPROM(chunkAddress + P_INSTANCE, UNUSED_CHUNK);
+    writeByteToEEPROM(chunkAddress + P_HANDLE, (unsigned int)0);
+    mergeUnusedChunks();
 }
 
-void deallocChunk(int handle) {
-    int chunk = chunkForHandle(handle);
-    writeByteToEEPROM(chunk + P_INSTANCE, UNUSED_CHUNK);
-    writeByteToEEPROM(chunk + P_HANDLE, (unsigned int)0);
-}
-
-int resizeChunk(unsigned int handle, int newSize) {
-    int chunk = chunkForHandle(handle);
+// resizes a chunk, not used for the time being
+// throws error if not enough space
+void resizeChunk(unsigned int handle, int newSize) {
     allocChunk(TMP_HANDLE, newSize);
-    int chunk2 = chunkForHandle(TMP_HANDLE);
+
+    int existingChunkAddress = chunkAddressForHandle(handle);
+    int newChunkAddress = chunkAddressForHandle(TMP_HANDLE);
+
+    // copy data
     for (int i = 0; i < newSize; i++)
-        writeByteToEEPROM(chunk2 + P_OVERHEAD + i, readByteFromEEPROM(chunk + P_OVERHEAD + i));
-    deallocChunk(handle);
-    _mergeChunks();
+        writeByteToEEPROM(newChunkAddress + P_DATA + i, readByteFromEEPROM(existingChunkAddress + P_DATA + i));
+    
+    // old handle markes as unused
+    freeChunk(handle);
 
-    writeByteToEEPROM(chunk2 + P_HANDLE, handle);
-    return 1;
+    writeByteToEEPROM(newChunkAddress + P_HANDLE, handle);
 }
 
-int deleteChunkFragment(int handle, int address, int delta) {
-    int chunk = chunkForHandle(handle);
-    int size = chunkSize(handle);
-    int newSize = size - delta;
-    allocChunk(TMP_HANDLE, size - delta);
-    int tmpChunk = chunkForHandle(TMP_HANDLE);
+// deletes a segment inside the given chunk
+// the segment starts at offset, and consists of lenght bytes
+void deleteChunkDataSegment(int handle, int offset, int length) {
+    int chunkAddress = chunkAddressForHandle(handle);
+    int size =  chunkDataSize(chunkAddress);
+    int newSize = size - length;
+
+    allocChunk(TMP_HANDLE, size - length);
+
+    int tmpChunkAddress = chunkAddressForHandle(TMP_HANDLE);
     for (int i = 0; i < newSize; i++) {
-        if (i < address)
-            writeByteToEEPROM(tmpChunk + P_OVERHEAD + i, readByteFromEEPROM(chunk + P_OVERHEAD + i));
+        if (i < offset)
+            writeByteToEEPROM(tmpChunkAddress + P_DATA + i, readByteFromEEPROM(chunkAddress + P_DATA + i));
         else
-            writeByteToEEPROM(tmpChunk + P_OVERHEAD + i, readByteFromEEPROM(chunk + P_OVERHEAD + i + delta));
+            writeByteToEEPROM(tmpChunkAddress + P_DATA + i, readByteFromEEPROM(chunkAddress + P_DATA + i + length));
     }
-    deallocChunk(handle);
-    _mergeChunks();
-    writeByteToEEPROM(tmpChunk + P_HANDLE, handle);
-    return 1;
+
+    freeChunk(handle);
+    
+    writeByteToEEPROM(tmpChunkAddress + P_HANDLE, handle);
 }
 
-int insertChunkFragment(int handle, int address, int delta) {
-    int p = chunkForHandle(handle);
-    int size = chunkSize(handle);
-    allocChunk(TMP_HANDLE, size + delta);
-    // address=5, delta=3
+// inserts a segment in the data of the given chunk
+void insertChunkDataSegment(int handle, int offset, int length) {
+    // create a temporary chunk (that is going to be the result)
+    int chunkAddress = chunkAddressForHandle(handle);
+    int size = chunkDataSize(chunkAddress);
+    allocChunk(TMP_HANDLE, size + length);
+
+    // offset=5, length=3
     // 0123456
     // 01234---56
-    int p2 = chunkForHandle(TMP_HANDLE);
+
+    int tmpChunkAddress = chunkAddressForHandle(TMP_HANDLE);
     for (int i = 0; i < size; i++) {
-        if (i < address)
-            writeByteToEEPROM(p2 + P_OVERHEAD + i, readByteFromEEPROM(p + P_OVERHEAD + i));
+        if (i < offset)
+            writeByteToEEPROM(tmpChunkAddress + P_DATA + i, readByteFromEEPROM(chunkAddress + P_DATA + i));
         else
-            writeByteToEEPROM(p2 + P_OVERHEAD + i + delta, readByteFromEEPROM(p + P_OVERHEAD + i));
+            writeByteToEEPROM(tmpChunkAddress + P_DATA + i + length, readByteFromEEPROM(chunkAddress + P_DATA + i));
     }
-    deallocChunk(handle);
-    _mergeChunks();
 
-    writeByteToEEPROM(p2 + P_HANDLE, handle);
-    return 1;
+    freeChunk(handle);
+
+    writeByteToEEPROM(tmpChunkAddress + P_HANDLE, handle);
 }
+
+
 
 //
-// HEAP ACCESSORS
-//
+// DATA ACCESSORS
+// Throw fatal if out of bounds
 
-unsigned char pget(int handle, int address) {
-    int chunk = chunkForHandle(handle);
-    if (address < 0 || address >= readIntFromEEPROM(chunk + P_SIZE))
-        fatalError(34, address);
-    return readByteFromEEPROM(chunk + P_OVERHEAD + address);
+unsigned char readData(int handle, int offset) {
+    int chunkAddress = chunkAddressForHandle(handle);
+    if (offset < 0 || offset >= chunkDataSize(chunkAddress))
+        fatalError(34, offset);
+    return readByteFromEEPROM(chunkAddress + P_DATA + offset);
 }
 
-unsigned char pget(int address) {
-    return pget(MAIN_CHUNK_HANDLE, address);
+unsigned char readMainData(int offset) {
+    return readData(MAIN_CHUNK_HANDLE, offset);
 }
 
-int pgetInt(int address) {
-    return pget(MAIN_CHUNK_HANDLE, address) * 256 + pget(MAIN_CHUNK_HANDLE, address + 1);
+int readDataInt(int offset) {
+    return readData(MAIN_CHUNK_HANDLE, offset) * 256 + readData(MAIN_CHUNK_HANDLE, offset + 1);
 }
 
-uint32_t pgetLong(int address) {
+uint32_t readDataLong(int offset) {
     uint32_t       result;
     unsigned char* bytes = (unsigned char*)&result;
-    bytes[0] = pget(address);
-    bytes[1] = pget(address + 1);
-    bytes[2] = pget(address + 2);
-    bytes[3] = pget(address + 3);
+    bytes[0] = readMainData(offset);
+    bytes[1] = readMainData(offset + 1);
+    bytes[2] = readMainData(offset + 2);
+    bytes[3] = readMainData(offset + 3);
     return result;
 }
 
-float pgetFloat(int handle, int address) {
+float readDataFloat(int handle, int offset) {
     float          result = 0.0;
     unsigned char* bytes = (unsigned char*)&result;
-    bytes[0] = pget(address);
-    bytes[1] = pget(address + 1);
-    bytes[2] = pget(address + 2);
-    bytes[3] = pget(address + 3);
+    bytes[0] = readMainData(offset);
+    bytes[1] = readMainData(offset + 1);
+    bytes[2] = readMainData(offset + 2);
+    bytes[3] = readMainData(offset + 3);
     return result;
 }
 
-float pgetFloat(int address) {
-    return pgetFloat(MAIN_CHUNK_HANDLE, address);
+float readMainDataFloat(int address) {
+    return readDataFloat(MAIN_CHUNK_HANDLE, address);
 }
 
-void pset(int handle, int address, unsigned char value) {
-    int chunkAddress = chunkForHandle(handle);
-    if (address < 0 || address >= readIntFromEEPROM(chunkAddress + P_SIZE))
-        fatalError(35, address);
-    if (readByteFromEEPROM(chunkAddress + P_OVERHEAD + address) != value) {
-        writeByteToEEPROM(chunkAddress + P_OVERHEAD + address, value);
+void setData(int handle, int offset, unsigned char value) {
+    int chunkAddress = chunkAddressForHandle(handle);
+    if (offset < 0 || offset >= chunkDataSize(chunkAddress))
+        fatalError(35, offset);
+    if (readByteFromEEPROM(chunkAddress + P_DATA + offset) != value) {
+        writeByteToEEPROM(chunkAddress + P_DATA + offset, value);
     }
 }
 
-void pset(int address, unsigned char value) {
-    pset(MAIN_CHUNK_HANDLE, address, value);
+void setDataMain(int offset, unsigned char value) {
+    setData(MAIN_CHUNK_HANDLE, offset, value);
 }
 
-void psetInt(int address, unsigned int value) {
-    pset(MAIN_CHUNK_HANDLE, address, value / 256);
-    pset(MAIN_CHUNK_HANDLE, address + 1, value % 256);
+void setDataInt(int offset, unsigned int value) {
+    setData(MAIN_CHUNK_HANDLE, offset, value / 256);
+    setData(MAIN_CHUNK_HANDLE, offset + 1, value % 256);
 }
 
-void psetFloat(int handle, int address, float value) {
+void setDataFloat(int handle, int address, float value) {
     unsigned char* bytes = (unsigned char*)&value;
-    pset(handle, address, bytes[0]);
-    pset(handle, address + 1, bytes[1]);
-    pset(handle, address + 2, bytes[2]);
-    pset(handle, address + 3, bytes[3]);
+    setData(handle, address, bytes[0]);
+    setData(handle, address + 1, bytes[1]);
+    setData(handle, address + 2, bytes[2]);
+    setData(handle, address + 3, bytes[3]);
 }
 
-void psetFloat(int address, float value) {
-    psetFloat(MAIN_CHUNK_HANDLE, address, value);
+void setDataMainFloat(int address, float value) {
+    setDataFloat(MAIN_CHUNK_HANDLE, address, value);
 }
+
