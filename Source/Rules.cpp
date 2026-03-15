@@ -144,7 +144,7 @@ Axon insertAxon(int index, int isCondition, int instance, int kind)
 
     Axon existingAxon = axonForIndex(index);
     a.address = existingAxon.address;
-    insertChunkDataSegment(RULES_HANDLE, existingAxon.address, a.length);
+    insertDataSegment(RULES_HANDLE, existingAxon.address, a.length);
     writeAxon(a);
     return a;
 }
@@ -266,7 +266,7 @@ void insertCondition(int axonIndex, int globalAxonIndex)
 void deleteAxon(int axonIndex)
 {
     Axon axon = axonForIndex(axonIndex);
-    deleteChunkSegment(RULES_HANDLE, axon.address, axon.length);
+    deleteDataSegment(RULES_HANDLE, axon.address, axon.length);
 }
 
 // LABELS
@@ -430,7 +430,7 @@ int evalRules()
     int changed = 0;
     for (int inst = 0; inst < numberOfInstances(); inst++)
     {
-        if (chunkForInstanceAndHandleExists(inst, RULES_HANDLE))
+        if (handleExists(inst, RULES_HANDLE))
         {
             switchContextToInstance(inst);
             for (Axon cc = firstCC(); !cc.isEnd; cc = nextCC(cc))
@@ -471,7 +471,7 @@ int rulesUsingInstance(int instance)
 {
     int result = 0;
     int _chunk = firstChunkAddress();
-    while (!atEndOfChunks(_chunk))
+    while (_chunk)
     {
         if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK &&
             chunkInstance(_chunk) != instance)
@@ -491,7 +491,7 @@ int rulesUsingInstance(int instance)
 void updateRulesBecauseOfDeletionOfInstance(int instance)
 {
     int _chunk = firstChunkAddress();
-    while (!atEndOfChunks(_chunk))
+    while (_chunk)
     {
         if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK)
         {

@@ -77,15 +77,15 @@ namespace aqualog {
     }
 
     int chunkIsEmpty() {
-        return chunkDataSizeForHandle(LOG_HANDLE) == 7;
+        return dataSizeForHandle(LOG_HANDLE) == 7;
     }
 
     int offsetDeltaed(int offset, int delta) {
         offset += delta;
         if (offset < 1)
-            offset += chunkDataSizeForHandle(LOG_HANDLE) - 1;
-        if (offset > chunkDataSizeForHandle(LOG_HANDLE) - 1)
-            offset -= chunkDataSizeForHandle(LOG_HANDLE) - 1;
+            offset += dataSizeForHandle(LOG_HANDLE) - 1;
+        if (offset > dataSizeForHandle(LOG_HANDLE) - 1)
+            offset -= dataSizeForHandle(LOG_HANDLE) - 1;
         return offset;
     }
 
@@ -94,7 +94,7 @@ namespace aqualog {
     }
 
     int endOffset() {
-        for (int i = 1; i < chunkDataSizeForHandle(LOG_HANDLE); i++)
+        for (int i = 1; i < dataSizeForHandle(LOG_HANDLE); i++)
             if (readData(LOG_HANDLE, i) == LOG_END)
                 return i;
         fatalError(39, 0);
@@ -102,7 +102,7 @@ namespace aqualog {
     }
 
     int startOffset() {
-        for (int i = 0; i < chunkDataSizeForHandle(LOG_HANDLE); i++)
+        for (int i = 0; i < dataSizeForHandle(LOG_HANDLE); i++)
             if (readData(LOG_HANDLE, i) == LOG_START)
                 return i;
         fatalError(40, 0);
@@ -348,13 +348,13 @@ int logChunkIsEmpty() {
 }
 
 void logEvent(unsigned char data) {
-    if (!chunkForHandleExists(LOG_HANDLE))
+    if (!handleExists(LOG_HANDLE))
         createLogChunk(200);
     aqualog::log(data);
 }
 
 void showLogDialog(void (*f)(), void (*fn)(unsigned char)) {
-    if (!chunkForHandleExists(LOG_HANDLE))
+    if (!handleExists(LOG_HANDLE))
         createLogChunk(200);
     aqualog::offset = 0;
     aqualog::home = f;

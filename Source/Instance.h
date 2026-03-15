@@ -70,7 +70,7 @@ int           instanceForId(int);
 int           statusForInstance(int instance, int contains);
 void          setActiveInstance(int instance);
 int           getInstanceWithStatus();
-void          removeInstanceAt(int instance);
+int removeInstanceAt(int instance);
 int           getRepetitionForInstance(int instance);
 int           idForInstance(int offset);
 

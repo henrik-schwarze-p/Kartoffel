@@ -132,7 +132,7 @@ void dumpChunks() {
     col2();
     boardPrintln("Unused");
     int _chunk = firstChunkAddress();
-    while (!atEndOfChunks(_chunk)) {
+    while (_chunk) {
         printOffset(_chunk);
         printEE(_chunk);
         printEE(_chunk + 1);

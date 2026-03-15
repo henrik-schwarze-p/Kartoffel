@@ -307,7 +307,7 @@ void repaintRules() {
 }
 
 void showRulesDialog(void (*fn)(void)) {
-    if (!chunkForHandleExists(RULES_HANDLE))
+    if (!handleExists(RULES_HANDLE))
         createRulesChunk();
     rules::screenCallback = fn;
     rules::toolbarSet = 0;

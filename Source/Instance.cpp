@@ -39,9 +39,17 @@
 //
 // BASIC INSTANCE MANAGEMENT
 //
+
+/* The instance using the CPU */
 unsigned char activeInstance = NO_INSTANCE_ACTIVE;
 
+/* The instance owning the screen */
 unsigned char foregroundInstance = 0;
+
+unsigned char pushedActiveInstances[MAX_NUMBER_OF_PUSHED_INSTANCES];
+
+int           pushedActiveInstancesCounter = 0;
+
 
 screen screenToEnter[MAX_NUMBER_OF_INSTANCES];
 
@@ -53,7 +61,6 @@ screen getEnterScreen(int instance) {
     return screenToEnter[instance];
 }
 
-
 unsigned char getForegroundInstance() {
     return foregroundInstance;
 }
@@ -62,8 +69,6 @@ void setForegroundInstance(unsigned char newInstance) {
     foregroundInstance = newInstance;
 }
 
-unsigned char pushedActiveInstances[MAX_NUMBER_OF_PUSHED_INSTANCES];
-int           pushedActiveInstancesCounter = 0;
 
 unsigned char numberOfInstances() {
     return readByteFromEEPROM(EPROM_NUMBER_OF_INSTANCES);
@@ -146,7 +151,16 @@ int instanceForId(int id) {
 
 // REMOVE INSTANCE
 
-void removeInstanceAt(int instance) {
+void decreaseChunksInstances(int decreaseFrom) {
+    int chunkAddress = firstChunkAddress();
+    while (chunkAddress) {
+        if (chunkInstance(chunkAddress) >= decreaseFrom && !chunkUnused(chunkAddress))
+            writeByteToEEPROM(chunkAddress + P_INSTANCE, chunkInstance(chunkAddress) - 1);
+        chunkAddress = nextChunkAddress(chunkAddress);
+    }
+}
+
+int removeInstanceAt(int instance) {
     for (int i = 0; i < pushedActiveInstancesCounter; i++)
         if (pushedActiveInstances[i] == instance)
             fatalError(11, instance);
@@ -157,7 +171,6 @@ void removeInstanceAt(int instance) {
     switchContextToInstance(instance);
     freeAllChunksForActiveInstance();
     freeAllHeaps();
-    decreaseChunksInstances();
     popContext();
 
     int n = numberOfInstances();
@@ -167,9 +180,13 @@ void removeInstanceAt(int instance) {
         writeByteToEEPROM(i, r);
     }
     writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, n - 1);
+
+    updateRulesBecauseOfDeletionOfInstance(instance);
+    decreaseChunksInstances(instance);
+
     if (activeInstance > instance)
         activeInstance--;
-    updateRulesBecauseOfDeletionOfInstance(instance);
+    return activeInstance;
 }
 
 // Pushes the active instance and makes a context switch to instance

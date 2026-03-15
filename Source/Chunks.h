@@ -17,25 +17,25 @@
 #define TMP_HANDLE 254
 
 int firstChunkAddress();
-int atEndOfChunks(int);
 int nextChunkAddress(int);
 
 void    freeAllChunksForActiveInstance();
-void    decreaseChunksInstances();
 uint8_t chunkDataGetValue(int chunk, int i);
 uint8_t chunkInstance(int);
 uint8_t chunkHandle(int);
 int     chunkUnused(int);
 int     chunkDataSize(int);
 
-unsigned int chunkDataSizeForHandle(int handle);
+unsigned int dataSizeForHandle(int handle);
 void         mergeUnusedChunks();
 
-int  chunkForHandleExists(int handle);
-int  chunkForInstanceAndHandleExists(int instance, int handle);
+int  handleExists(int handle);
+int  handleExists(int instance, int handle);
 int  chunkDataAddressForInstanceAndHandle(int instance, int handle);
 void  resizeChunk(unsigned int handle, int newSize);
 void freeChunk(int handle);
+int chunkAddressForHandle(int handle);
+unsigned int availableDataMemory();
 
 void          setDataMain(int address, unsigned char value);
 unsigned char readData(int handle, int address);
@@ -43,8 +43,8 @@ unsigned char readMainData(int address);
 void          setData(int handle, int address, unsigned char value);
 void          dumpChunks();
 void  allocChunk(int handle, int size);
-void           insertChunkDataSegment(int handle, int address, int delta);
-void           deleteChunkDataSegment(int handle, int address, int delta);
+void           insertDataSegment(int handle, int address, int delta);
+void           deleteDataSegment(int handle, int address, int delta);
 unsigned int  availableDataMemory();
 int           readDataInt(int address);
 void          setDataInt(int address, unsigned int value);
