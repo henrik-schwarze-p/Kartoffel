@@ -58,6 +58,8 @@ void schedule() {
     // Poor man's multitasking
 
     for (int i = 0; i < numberOfInstances(); i++) {
+        if (!usedInstance(i))
+            continue;            
         if (!statusForInstance(i, STATUS_OK)) {
             fatalError(6, i);
         }

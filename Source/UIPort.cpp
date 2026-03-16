@@ -11,6 +11,7 @@
 #include "Instance.h"
 #include "UI.h"
 #include "Drawing.h"
+#include "Instance.h"
 #include "Text.h"
 #include "Repainter.h"
 
@@ -36,7 +37,7 @@ namespace portDialog {
     const char* getLabelForPort(int p, int digital) {
         const char* result = 0;
         for (int i = 0; i < numberOfInstances(); i++)
-            if (callGetLabelForPort(i, p, digital)) {
+            if (usedInstance(i) && callGetLabelForPort(i, p, digital)) {
                 if (result) {
                     result = PSTR("Many...");
                 } else {

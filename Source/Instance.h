@@ -9,6 +9,8 @@
 
 #define MAX_NUMBER_OF_PUSHED_INSTANCES 10
 
+#define UNUSED_INSTANCE 255
+
 // 30 instance should be enought for everyone
 #define MAX_NUMBER_OF_INSTANCES 30
 #define INSTANCE_ID 0
@@ -61,6 +63,7 @@ screenPtr screenForInstance(int instance);
 int portManagerId();
 int desktopId();
 
+int usedInstance(int);
 unsigned char numberOfInstances();
 unsigned char lastInstance();
 int           getActiveInstance();
@@ -70,7 +73,7 @@ int           instanceForId(int);
 int           statusForInstance(int instance, int contains);
 void          setActiveInstance(int instance);
 int           getInstanceWithStatus();
-int removeInstanceAt(int instance);
+void removeInstanceAt(int instance);
 int           getRepetitionForInstance(int instance);
 int           idForInstance(int offset);
 

@@ -86,13 +86,17 @@ int instanceAddress(int instance) {
     return INSTANCE_TABLE_START + INSTANCE_OVERHEAD * instance;
 }
 
+    int usedInstance(int i) {
+        return readByteFromEEPROM(instanceAddress(i)+INSTANCE_STATUS)!=UNUSED_INSTANCE;
+    }
+
 int idForInstance(int instance) {
     return readIntFromEEPROM(instanceAddress(instance) + INSTANCE_ID);
 }
 
 int getInstanceWithStatus() {
     for (int i = 0; i < numberOfInstances(); i++)
-        if (!statusForInstance(i, STATUS_OK))
+        if (usedInstance(i) && !statusForInstance(i, STATUS_OK))
             return i;
     return -1;
 }
@@ -142,6 +146,7 @@ int statusForInstance(int instance, int contains) {
 // Of course, the app for the instance should have cardinality 1, if not, it
 // would be called "firstInstanceForId"
 int instanceForId(int id) {
+    // KAKA
     for (int i = 0; i < numberOfInstances(); i++)
         if (idForInstance(i) == id)
             return i;
@@ -160,7 +165,7 @@ void decreaseChunksInstances(int decreaseFrom) {
     }
 }
 
-int removeInstanceAt(int instance) {
+void removeInstanceAt(int instance) {
     for (int i = 0; i < pushedActiveInstancesCounter; i++)
         if (pushedActiveInstances[i] == instance)
             fatalError(11, instance);
@@ -173,20 +178,27 @@ int removeInstanceAt(int instance) {
     freeAllHeaps();
     popContext();
 
+    /*
     int n = numberOfInstances();
     for (int i = INSTANCE_TABLE_START + instance * INSTANCE_OVERHEAD;
          i < INSTANCE_TABLE_START + (MAX_NUMBER_OF_INSTANCES - 1) * INSTANCE_OVERHEAD; i++) {
         uint8_t r = readByteFromEEPROM(i + INSTANCE_OVERHEAD);
         writeByteToEEPROM(i, r);
     }
-    writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, n - 1);
+    */
 
-    updateRulesBecauseOfDeletionOfInstance(instance);
-    decreaseChunksInstances(instance);
+    writeByteToEEPROM(INSTANCE_TABLE_START+instance*INSTANCE_OVERHEAD+INSTANCE_STATUS,UNUSED_INSTANCE);
 
-    if (activeInstance > instance)
-        activeInstance--;
-    return activeInstance;
+dumpChunks();
+
+    //writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, n - 1);
+
+    // todo-> updateRulesBecauseOfDeletionOfInstance(instance);
+    //decreaseChunksInstances(instance);
+
+    //if (activeInstance > instance)
+      //  activeInstance--;
+    //return activeInstance;
 }
 
 // Pushes the active instance and makes a context switch to instance
@@ -218,14 +230,17 @@ void setActiveInstance(int instance) {
 
 int numberOfVisibleInstances() {
     int r = 0;
-    for (int i = 0; i < numberOfInstances(); i++)
+    for (int i = 0; i < numberOfInstances(); i++) {
+        if (!usedInstance(i))
+            continue;
         r += typeForInstance(i) != desktopId();
+    }
     return r;
 }
 
 int visibleInstance(int index) {
     for (int i = 0; i < numberOfInstances(); i++)
-        if (typeForInstance(i) != desktopId())
+        if (usedInstance(i) && typeForInstance(i) != desktopId())
             if (--index < 0)
                 return i;
     return -1;
@@ -354,7 +369,7 @@ void callMonitor(int instance, int x, int y, int w, int h, int force) {
 
 const char* nameForInstance(int instance) {
     if (instance >= numberOfInstances())
-        return 0;
+        fatalError(590,instance);
     return callGeneratedName(instance);
 }
 

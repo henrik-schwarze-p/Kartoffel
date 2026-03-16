@@ -4,6 +4,7 @@
 #include "Instance.h"
 #include "Namespaces.h"
 #include "BoardLib.h"
+#include "Chunks.h"
 
 void fatalError(int code, int extraInfo) {
 #ifdef MEGA

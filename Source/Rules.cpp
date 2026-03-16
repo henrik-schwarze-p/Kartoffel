@@ -158,6 +158,9 @@ InstanceKind instanceAndKindForGlobalIndex(int considerConditions, int globalAxo
     int acc = 0;
     for (int instance = 0; instance < numberOfInstances(); instance++)
     {
+        if (!usedInstance(instance))
+            continue;
+            
         int index = 0;
         const char *r = fn(instance, index);
         while (r)
@@ -430,7 +433,7 @@ int evalRules()
     int changed = 0;
     for (int inst = 0; inst < numberOfInstances(); inst++)
     {
-        if (handleExists(inst, RULES_HANDLE))
+        if (usedInstance(inst) && handleExists(inst, RULES_HANDLE))
         {
             switchContextToInstance(inst);
             for (Axon cc = firstCC(); !cc.isEnd; cc = nextCC(cc))

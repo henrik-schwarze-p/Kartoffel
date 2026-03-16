@@ -150,12 +150,13 @@ void freeAllHeaps() {
             _head = _nextHeap(_head);
         }
     }
+    /*
     int _head = _goToFirstHeap();
     while (!_atEndOfHeap(_head)) {
         if (_heapInstance(_head) > getActiveInstance())
             setHeapData(_head + H_INSTANCE, heapData[_head + H_INSTANCE] - 1);
         _head = _nextHeap(_head);
-    }
+    }*/
 }
 
 unsigned char mget(int heapHandle, int address) {
