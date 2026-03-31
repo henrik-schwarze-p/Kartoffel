@@ -10,7 +10,7 @@
 #include "Target.h"
 #include "Text.h"
 
-// The "EPROM data" is stored in this array.
+// The "EPROM data" is stored in this table.
 // This is the configuration of the app in the store.
 
 /* PERSISTANTE MEMORY MAPPING
@@ -48,13 +48,20 @@ unsigned char foregroundInstance = 0;
 
 unsigned char pushedActiveInstances[MAX_NUMBER_OF_PUSHED_INSTANCES];
 
-int           pushedActiveInstancesCounter = 0;
-
+int pushedActiveInstancesCounter = 0;
 
 screen screenToEnter[MAX_NUMBER_OF_INSTANCES];
 
-void setEnterScreen(void(*s)(), int instance) {
-    screenToEnter[instance]=s;
+void prepareInstanceTable() {
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++) {
+        setIdForInstance(i, 0);
+        setStatusForInstance(i, STATUS_UNUSED);
+    }
+    writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, MAX_NUMBER_OF_INSTANCES);
+}
+
+void setEnterScreen(void (*s)(), int instance) {
+    screenToEnter[instance] = s;
 }
 
 screen getEnterScreen(int instance) {
@@ -68,7 +75,6 @@ unsigned char getForegroundInstance() {
 void setForegroundInstance(unsigned char newInstance) {
     foregroundInstance = newInstance;
 }
-
 
 unsigned char numberOfInstances() {
     return readByteFromEEPROM(EPROM_NUMBER_OF_INSTANCES);
@@ -86,12 +92,21 @@ int instanceAddress(int instance) {
     return INSTANCE_TABLE_START + INSTANCE_OVERHEAD * instance;
 }
 
-    int usedInstance(int i) {
-        return readByteFromEEPROM(instanceAddress(i)+INSTANCE_STATUS)!=UNUSED_INSTANCE;
-    }
+int usedInstance(int i) {
+    return statusForInstance(i, STATUS_UNUSED) == 0;
+    // return readByteFromEEPROM(instanceAddress(i) + INSTANCE_STATUS) != UNUSED_INSTANCE;
+}
 
 int idForInstance(int instance) {
     return readIntFromEEPROM(instanceAddress(instance) + INSTANCE_ID);
+}
+
+void setIdForInstance(int instance, int id) {
+    writeIntToEEPROM(instanceAddress(instance) + INSTANCE_ID, id);
+}
+
+void writeInstanceStatus(int instance, int status) {
+    writeByteToEEPROM(instanceAddress(instance) + INSTANCE_STATUS, status);
 }
 
 int getInstanceWithStatus() {
@@ -156,16 +171,7 @@ int instanceForId(int id) {
 
 // REMOVE INSTANCE
 
-void decreaseChunksInstances(int decreaseFrom) {
-    int chunkAddress = firstChunkAddress();
-    while (chunkAddress) {
-        if (chunkInstance(chunkAddress) >= decreaseFrom && !chunkUnused(chunkAddress))
-            writeByteToEEPROM(chunkAddress + P_INSTANCE, chunkInstance(chunkAddress) - 1);
-        chunkAddress = nextChunkAddress(chunkAddress);
-    }
-}
-
-void removeInstanceAt(int instance) {
+void markInstanceAsUnused(int instance) {
     for (int i = 0; i < pushedActiveInstancesCounter; i++)
         if (pushedActiveInstances[i] == instance)
             fatalError(11, instance);
@@ -178,27 +184,9 @@ void removeInstanceAt(int instance) {
     freeAllHeaps();
     popContext();
 
-    /*
-    int n = numberOfInstances();
-    for (int i = INSTANCE_TABLE_START + instance * INSTANCE_OVERHEAD;
-         i < INSTANCE_TABLE_START + (MAX_NUMBER_OF_INSTANCES - 1) * INSTANCE_OVERHEAD; i++) {
-        uint8_t r = readByteFromEEPROM(i + INSTANCE_OVERHEAD);
-        writeByteToEEPROM(i, r);
-    }
-    */
-
-    writeByteToEEPROM(INSTANCE_TABLE_START+instance*INSTANCE_OVERHEAD+INSTANCE_STATUS,UNUSED_INSTANCE);
-
-dumpChunks();
-
-    //writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, n - 1);
+    setStatusForInstance(instance, STATUS_UNUSED);
 
     // todo-> updateRulesBecauseOfDeletionOfInstance(instance);
-    //decreaseChunksInstances(instance);
-
-    //if (activeInstance > instance)
-      //  activeInstance--;
-    //return activeInstance;
 }
 
 // Pushes the active instance and makes a context switch to instance
@@ -369,7 +357,7 @@ void callMonitor(int instance, int x, int y, int w, int h, int force) {
 
 const char* nameForInstance(int instance) {
     if (instance >= numberOfInstances())
-        fatalError(590,instance);
+        fatalError(590, instance);
     return callGeneratedName(instance);
 }
 

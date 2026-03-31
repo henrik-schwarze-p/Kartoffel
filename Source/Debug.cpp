@@ -10,6 +10,7 @@
 #include "Target.h"
 
 #include <stdio.h>
+#include <cstring>
 
 extern unsigned char heapData[HEAP_SIZE];
 
@@ -44,199 +45,215 @@ void printEE(int offset) {
     boardPrint(" ");
 }
 
+int kmin(int a, int b) {
+    if (a < b)
+        return a;
+    return b;
+}
+
 void col2() {
     boardPrint("    ");
 }
 
+char chacha[1000];
+char chacha2[1000];
+int  koffset;
+
+void kprint(const char* s) {
+    strcat(chacha, s);
+}
+
+int  ll = 5;
+void kprint(int kb) {
+    int b = kb;
+    if (b > 50) {
+        b = 50;
+    }
+    printOffset(koffset);
+    for (int i = 0; i < kmin(ll, b); i++)
+        printEE(koffset + i);
+
+    for (int i = 0; i < ll - kmin(ll, b); i++)
+        boardPrint("   ");
+
+    boardPrint("   ");
+    boardPrintln(chacha);
+    strcpy(chacha, "");
+
+    for (int i = ll; i < b; i++) {
+        if (i % ll == 0) {
+            printOffset(koffset + i);
+            printEE(koffset + i);
+        }
+        if (i % ll > 0 && i % ll < ll - 1) {
+            printEE(koffset + i);
+        }
+        if (i % ll == ll - 1) {
+            printEE(koffset + i);
+            boardPrintln("");
+        }
+    }
+    if (b > ll and (b % ll) != 0) {
+        boardPrintln();
+    }
+
+    koffset += kb;
+}
+
+void kprintn(int n) {
+    snprintf(chacha2, 10, "%d", n);
+    kprint(chacha2);
+}
+
 void dumpChunks() {
+    strcpy(chacha, "");
+    koffset = 0;
+
+    int numberOfInstances = readByteFromEEPROM(2);
+
     boardPrintln("EEPROM contents");
-    int offset = 0;
-    printOffset(offset);
-    printEE(offset++);
-    boardPrint(readByteFromEEPROM(offset++), 2);
-    col2();
 
-    boardPrintln("Magic number");
-    printOffset(offset);
-    int numberOfInstances = readByteFromEEPROM(offset);
-    printEE(offset++);
-    col2();
+    kprint("Magic number");
+    kprint(2);
+    kprint("Number of instancess");
+    kprint(1);
 
-    boardPrintln("Number of instances");
-    int i = 0;
-    for (i = 0; i < numberOfInstances; i++) {
-        printOffset(offset);
-        printEE(offset++);
-        printEE(offset++);
-        printEE(offset++);
-        col2();
-        boardPrint(instanceName(i));
-        boardPrint(" ");
-        if (statusForInstance(i, STATUS_OK))
-            boardPrint("OK ");
-        else
-            boardPrint("ERROR ");
+    for (int i = 0; i < numberOfInstances; i++) {
+        if (!statusForInstance(i, STATUS_UNUSED)) {
+            kprint(instanceName(i));
+            kprint(" ");
+        }
+        if (statusForInstance(i, STATUS_UNUSED))
+            kprint("UNUSED ");
         if (statusForInstance(i, STATUS_REGISTERM_ACTIVATED))
-            boardPrint("REGM ");
+            kprint("REGM ");
         if (statusForInstance(i, STATUS_REGISTERP_ACTIVATED))
-            boardPrint("REGP ");
-        boardPrintln("");
+            kprint("REGP ");
+        if (statusForInstance(i, STATUS_OK))
+            kprint("OK ");
+        kprint(3);
     }
-    for (; i < MAX_NUMBER_OF_INSTANCES; i++) {
-        printOffset(offset);
-        printEE(offset++);
-        printEE(offset++);
-        printEE(offset++);
-        col2();
 
-        boardPrintln("Unused");
-    }
-    printOffset(offset);
-    printEE(offset++);
-    printEE(offset++);
-    col2();
+    kprint("Random numbers to check EEPROM unserialisation");
+    kprint(2);
 
-    boardPrintln("Random numbers to check EEPROM unserialisation");
-    printOffset(offset);
-    while (offset < 105) {
-        printEE(offset++);
-    }
-    col2();
+    kprint("Reserved");
+    kprint(123 - koffset);
 
-    boardPrintln("Reserved");
-    printOffset(offset);
-    while (offset < 115) {
-        printEE(offset++);
-    }
-    col2();
+    kprint("Serialized Datetime (Y-M-D H:M)");
+    kprint(5);
 
-    boardPrintln("Reserved");
-    printOffset(offset);
-    while (offset < 123) {
-        printEE(offset++);
-    }
-    col2();
-    boardPrintln("Reserved");
-    printOffset(offset);
-    printEE(offset++);
-    printEE(offset++);
-    printEE(offset++);
-    printEE(offset++);
-    printEE(offset++);
-    col2();
-    boardPrintln("Serialized Datetime (Y-M-D H:M)");
-    printOffset(offset);
-    while (offset < 130) {
-        printEE(offset++);
-    }
-    col2();
-    boardPrintln("Unused");
+    kprint("Unused");
+    kprint(130 - koffset);
+
     int _chunk = firstChunkAddress();
     while (_chunk) {
-        printOffset(_chunk);
-        printEE(_chunk);
-        printEE(_chunk + 1);
-        printEE(_chunk + 2);
-        printEE(_chunk + 3);
-        col2();
         int isRules = 0;
         if (chunkHandle(_chunk) == LOG_HANDLE) {
-            boardPrint("Log Handle ");
+            kprint("Log Handle ");
         } else if (chunkHandle(_chunk) == RULES_HANDLE) {
             isRules = 1;
-            boardPrint("Rules Handle ");
+            kprint("Rules Handle ");
         } else if (chunkHandle(_chunk) == NAME_HANDLE)
-            boardPrint("Name Handle ");
+            kprint("Name Handle ");
         else if (chunkHandle(_chunk) == MAIN_CHUNK_HANDLE)
-            boardPrint("Main Handle ");
+            kprint("Main Handle ");
         else {
-            boardPrint("(");
-            boardPrint(chunkHandle(_chunk));
-            boardPrint(")");
+            kprint("Handle ");
+            kprintn(chunkHandle(_chunk));
+            kprint(": ");
         }
-        boardPrint("allocated by ");
-        boardPrint(instanceName(chunkInstance(_chunk)));
-        boardPrint("/Handle/Size");
-        boardPrintln("");
 
-        if (isRules) {
-            int pop = 4;
-            printOffset(_chunk + pop);
-            printEE(_chunk + pop);
-            col2();
-            boardPrintln("Active condition");
-            pop++;
+        kprint("allocated by ");
+        kprint(instanceName(chunkInstance(_chunk)));
+        kprint(4);
 
-            while (readByteFromEEPROM(_chunk + pop) != 0xED) {
-                printOffset(_chunk + pop);
-                printEE(_chunk + pop);
-                col2();
-                int isC = readByteFromEEPROM(_chunk + pop) == 0xC0;
-                if (isC)
-                    boardPrintln("It is a condition");
-                else
-                    boardPrintln("It is an action");
-                pop++;
-
-                printOffset(_chunk + pop);
-                printEE(_chunk + pop);
-                printEE(_chunk + pop + 1);
-                col2();
-                boardPrint("Instance ");
-                int instance = readByteFromEEPROM(_chunk + pop);
-                int whichOne = readByteFromEEPROM(_chunk + pop + 1);
-                boardPrint(instanceName(instance));
-                boardPrint("/");
-                boardPrintln("Offset of condition or action ");
-                pop += 2;
-
-                int         expectedNumberOfParameters = 0;
-                const char* c;
-                if (isC) {
-                    c = callConditionNames(instance, whichOne);
-                } else {
-                    c = callActionNames(instance, whichOne);
-                }
-                int i = 0;
-                while (pgm_read_byte(c + i)) {
-                    if (pgm_read_byte(c + i) == '[')
-                        expectedNumberOfParameters++;
-                    i++;
-                }
-                printOffset(_chunk + pop);
-                for (int i = 0; i < expectedNumberOfParameters * 2; i++) {
-                    printEE(_chunk + pop);
-                    pop++;
-                }
-                col2();
-                boardPrintln("Parameters");
-            }
-            printOffset(_chunk + pop);
-            printEE(_chunk + pop);
-            col2();
-            boardPrintln("End of rules");
-        } else if (chunkInstance(_chunk) == 255) {
-            printOffset(_chunk + 4);
-            col2();
-        } else {
-            printOffset(_chunk + 4);
-            int max = 0;
-            int l = nextChunkAddress(_chunk) - _chunk;
-            for (int i = P_DATA; i < l; i++) {
-                if (max == 8) {
-                    max = 0;
-                    boardPrintln("");
-                    printOffset(_chunk + i);
-                }
-                printEE(_chunk + i);
-                max++;
-            }
-            col2();
-        }
-        boardPrintln("");
+        kprint("Data");
+        kprint(chunkDataSize(_chunk));
         _chunk = nextChunkAddress(_chunk);
     }
-    printOffset(_chunk);
+    printOffset(koffset);
+    boardPrintln();
+
+    /*
+            if (isRules) {
+                int pop = 4;
+                printOffset(_chunk + pop);
+                printEE(_chunk + pop);
+                col2();
+                boardPrintln("Active condition");
+                pop++;
+
+                while (readByteFromEEPROM(_chunk + pop) != 0xED) {
+                    printOffset(_chunk + pop);
+                    printEE(_chunk + pop);
+                    col2();
+                    int isC = readByteFromEEPROM(_chunk + pop) == 0xC0;
+                    if (isC)
+                        boardPrintln("It is a condition");
+                    else
+                        boardPrintln("It is an action");
+                    pop++;
+
+                    printOffset(_chunk + pop);
+                    printEE(_chunk + pop);
+                    printEE(_chunk + pop + 1);
+                    col2();
+                    boardPrint("Instance ");
+                    int instance = readByteFromEEPROM(_chunk + pop);
+                    int whichOne = readByteFromEEPROM(_chunk + pop + 1);
+                    boardPrint(instanceName(instance));
+                    boardPrint("/");
+                    boardPrintln("Offset of condition or action ");
+                    pop += 2;
+
+                    int         expectedNumberOfParameters = 0;
+                    const char* c;
+                    if (isC) {
+                        c = callConditionNames(instance, whichOne);
+                    } else {
+                        c = callActionNames(instance, whichOne);
+                    }
+                    int i = 0;
+                    while (pgm_read_byte(c + i)) {
+                        if (pgm_read_byte(c + i) == '[')
+                            expectedNumberOfParameters++;
+                        i++;
+                    }
+                    printOffset(_chunk + pop);
+                    for (int i = 0; i < expectedNumberOfParameters * 2; i++) {
+                        printEE(_chunk + pop);
+                        pop++;
+                    }
+                    col2();
+                    boardPrintln("Parameters");
+                }
+                printOffset(_chunk + pop);
+                printEE(_chunk + pop);
+                col2();
+                boardPrintln("End of rules");
+            } else if (chunkInstance(_chunk) == 255) {
+                printOffset(_chunk + 4);
+                col2();
+            } else {
+                printOffset(_chunk + 4);
+                int max = 0;
+                int l = nextChunkAddress(_chunk) - _chunk;
+                for (int i = P_DATA; i < l; i++) {
+                    if (max == 8) {
+                        max = 0;
+                        boardPrintln("");
+                        printOffset(_chunk + i);
+                    }
+                    printEE(_chunk + i);
+                    max++;
+                }
+                col2();
+            }
+            boardPrintln("");
+            _chunk = nextChunkAddress(_chunk);
+        }
+        printOffset(_chunk);*/
 }
 
 void dumpHeaps() {

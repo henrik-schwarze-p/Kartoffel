@@ -9,8 +9,6 @@
 
 #define MAX_NUMBER_OF_PUSHED_INSTANCES 10
 
-#define UNUSED_INSTANCE 255
-
 // 30 instance should be enought for everyone
 #define MAX_NUMBER_OF_INSTANCES 30
 #define INSTANCE_ID 0
@@ -24,12 +22,15 @@
 // are loudly failing when an allocation fails
 #define STATUS_NO_MEMORY 4
 #define STATUS_REGISTERM_ACTIVATED 8
+#define STATUS_UNUSED 16
 
 #define NO_INSTANCE_ACTIVE 254
 
 #include "Frequency.h"
 #include "stdint.h"
 #include "Descriptors.h"
+
+void prepareInstanceTable();
 
 int         callEvalCondition(int instance, int conditionKind, uint16_t parameters[]);
 void        callPerformAction(int instance, int actionKind, uint16_t* parameters);
@@ -44,7 +45,9 @@ const char* callGetLabelForPort(int instance, int port, int digital);
 void        callWithContextSwitch(int instance, void (*fn)(void));
 void        callRegisterDirectly(int instance, int mode);
 
+int  instanceAddress(int instance);
 void addStatusForInstance(int status);
+void setStatusForInstance(int i, int status);
 int  getActiveInstance();
 int  isSetStatusForInstance(int status);
 void addStatusForInstance(int instance, int status);
@@ -63,7 +66,7 @@ screenPtr screenForInstance(int instance);
 int portManagerId();
 int desktopId();
 
-int usedInstance(int);
+int           usedInstance(int);
 unsigned char numberOfInstances();
 unsigned char lastInstance();
 int           getActiveInstance();
@@ -73,9 +76,11 @@ int           instanceForId(int);
 int           statusForInstance(int instance, int contains);
 void          setActiveInstance(int instance);
 int           getInstanceWithStatus();
-void removeInstanceAt(int instance);
+void          markInstanceAsUnused(int instance);
 int           getRepetitionForInstance(int instance);
 int           idForInstance(int offset);
+void          setIdForInstance(int address, int descriptor);
+void          writeInstanceStatus(int address, int status);
 
 int numberOfVisibleInstances();
 int visibleInstance(int index);
@@ -84,9 +89,8 @@ const char* instanceName(int instance);
 void        removeStatusForInstance(int instance, int status);
 uint16_t    getDescriptorForInstance(uint8_t instance);
 
-void setEnterScreen(void(*s)(), int instance);
+void   setEnterScreen(void (*s)(), int instance);
 screen getEnterScreen(int instance);
-
 
 unsigned char getForegroundInstance();
 void          setForegroundInstance(unsigned char newInstance);

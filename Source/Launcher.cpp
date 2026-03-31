@@ -21,6 +21,7 @@
 #include "Rules.h"
 
 #include "EepromConf.inc.h"
+#include "FatalError.h"
 
 unsigned char readConf(int a) {
     return pgm_read_byte_near(eepromConfiguration + a);
@@ -28,9 +29,6 @@ unsigned char readConf(int a) {
 
 void launchAll() {
     boardPrintln("Launching...");
-
-    //    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
-    //      lastState[i] = 65535;
 
     unsigned char epromRandom0 = readByteFromEEPROM(EPROM_RANDOM);
     unsigned char epromRandom1 = readByteFromEEPROM(EPROM_RANDOM + 1);
@@ -40,7 +38,8 @@ void launchAll() {
     if (randomBits[0] == epromRandom0 && randomBits[1] == epromRandom1) {
         boardPrintln("Random Bits match");
         for (int i = 0; i < numberOfInstances(); i++)
-            launchInstance(i);
+            if (usedInstance(i))
+                launchInstance(i);
         return;
     }
 
@@ -63,7 +62,8 @@ void launchAll() {
         boardPrintln("Configuration written.");
 
         for (int i = 0; i < numberOfInstances(); i++)
-            launchInstance(i);
+            if (usedInstance(i))
+                launchInstance(i);
         return;
     }
 
@@ -86,36 +86,45 @@ void launchAll() {
 
     writeByteToEEPROM(PERSISTANT_HEAP_ADDRESS + P_INSTANCE, UNUSED_CHUNK);
     writeByteToEEPROM(PERSISTANT_HEAP_ADDRESS + P_HANDLE, 0);
-    writeIntToEEPROM(PERSISTANT_HEAP_ADDRESS + P_SIZE,
-                     (unsigned int)(EPROM_SIZE - PERSISTANT_HEAP_ADDRESS - P_DATA));
+    writeIntToEEPROM(PERSISTANT_HEAP_ADDRESS + P_SIZE, (unsigned int)(EPROM_SIZE - PERSISTANT_HEAP_ADDRESS - P_DATA));
 
     writeByteToEEPROM(EPROM_RANDOM, randomBits[0]);
     writeByteToEEPROM(EPROM_RANDOM + 1, randomBits[1]);
 
     boardPrintln("Adding one instance of each app.");
 
+    prepareInstanceTable();
     for (int i = 0; i < NUMBER_OF_DESCRIPTORS; i++)
         launchDescriptor(i);
 }
 
 void launchDescriptor(int descriptor) {
     // Where are we going to write in the table?
-    int address = INSTANCE_TABLE_START + INSTANCE_OVERHEAD * numberOfInstances();
+
+    int newInstance = -1;
+
+    // search for the first hole
+    for (int i = 0; i < numberOfInstances(); i++) {
+        if (statusForInstance(i, STATUS_UNUSED)) {
+            newInstance = i;
+            break;
+        }
+    }
+
+    if (newInstance == -1) {
+        fatalError(511, 0);
+    }
+
     // First thing: the instance id
-    writeIntToEEPROM(address + INSTANCE_ID, descriptor);
-    // How many instances are there now?
-    int howManyInstances = numberOfInstances() + 1;
-    writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, howManyInstances);
-    int newInstance = howManyInstances - 1;
+    setIdForInstance(newInstance, descriptor);
 
     // Then the status: OK, not registering
     // From here, it is already safe to change contexts (because of registering)
-    writeByteToEEPROM(address + INSTANCE_STATUS, STATUS_OK);
+    writeInstanceStatus(newInstance, STATUS_OK);
 
     boardPrint(PSTR("Launching "));
     boardPrintln(nameForInstance(newInstance));
-    
-    
+
     // First, we call when created, the persistant variable will be initialized
     // But they are still not registered, so context switching is harmless
     callWhenCreated(newInstance);
@@ -139,7 +148,7 @@ void launchInstance(int instance) {
 
     // It opens starts screen by default
     setEnterScreen(0, instance);
-    
+
     // Memory variables get initialized
     callWhenPowered(instance);
 
