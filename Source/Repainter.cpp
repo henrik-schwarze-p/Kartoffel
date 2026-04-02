@@ -7,6 +7,7 @@
 //
 
 #include "Repainter.h"
+#include "Instance.h"
 
 int _repaint = 0;
 
@@ -20,7 +21,8 @@ void setRepaintState(int state) {
 
 // The middle part of the screen has to be repainted. It won't be cleaned before.
 void repaint() {
-    _repaint |= REPAINT;
+    if (getForegroundInstance() == getActiveInstance())
+        _repaint |= REPAINT;
 }
 
 // When repainted, clean the middle part of the screen

@@ -59,19 +59,16 @@ void schedule() {
 
     for (int i = 0; i < numberOfInstances(); i++) {
         if (!usedInstance(i))
-            continue;            
+            continue;
         if (!statusForInstance(i, STATUS_OK)) {
             fatalError(6, i);
         }
-        // ignore the calls for repainting from the apps that are not in foreground
-        int oldRepaint = repaintState();
+        // there should never be code inside the timeslice function,
+        // only exception is the clock, that draws each time
         callTimeSlice(i, 1, type, _justOpened);
-        if (getForegroundInstance() != i || !repaintInTimeSliceEnabled())
-            setRepaintState(oldRepaint);
     }
     int fg = getForegroundInstance();
     //             if (fg) {
-    //                 activateGraphics();
     //                 if (changed && insideRules()) {
     //                     switchContextToInstance(i);
     //                     repaintRules();
