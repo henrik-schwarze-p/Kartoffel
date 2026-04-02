@@ -10,7 +10,6 @@
 #include "Target.h"
 
 #include <stdio.h>
-#include <cstring>
 
 extern unsigned char heapData[HEAP_SIZE];
 
@@ -33,6 +32,7 @@ void dumpHeaps() {
 void dumpHeapsTxt() {
 }
 #else
+#include <cstring>
 
 void printOffset(int offset) {
     boardPrint("0x");
