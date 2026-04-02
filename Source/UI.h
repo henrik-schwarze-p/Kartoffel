@@ -86,6 +86,7 @@ void   cleanMiddle();
 void   appIcon();
 void   onIcon(int);
 void   drawMessage();
+int    repaintInTimeSliceEnabledD();
 
 typedef struct StructToolbarButton {
     command       action;

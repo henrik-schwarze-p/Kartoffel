@@ -192,7 +192,7 @@ namespace rules {
 
         switchContextToInstance(axon.instance);
         int value = axon.params[paramIndex];
-        // We assume that "Port", "An. Value" have precedence over the setAxonParameter methods
+        // We assume that "Pin", "An. Value" have precedence over the setAxonParameter methods
         if (toolbarIntForParameter(axon.label, paramIndex, PSTR("Pin")))
             showDigitalPortDialog(value, portsCont);
         else if (toolbarIntForParameter(axon.label, paramIndex, PSTR("An. Value")))

@@ -307,7 +307,7 @@ namespace aqualog {
         setPrintX(136);
         println(PSTR("Event"));
         setColor(colorDarkGray);
-        drawLine(2, 37, 317, 37);
+        // drawLine(2, 37, 317, 37);
         drawLine(2, 39, 317, 39);
         setColor(colorBlack);
         int skip = offset;

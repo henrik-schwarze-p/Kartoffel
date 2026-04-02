@@ -17,17 +17,27 @@ char   buttonCounter = 0;
 char   debugButtonCounter = 0;
 
 int _goToScreenLock = 0;
-int _enableRepaintInTimeSlice = 1;
+
+// Repaint enabling / disabling
+
+int _enableRepaintInTimeSlice = 0;
 
 void enableRepaintInTimeSlice() {
-    _enableRepaintInTimeSlice = 1;
+    if (_enableRepaintInTimeSlice == 0) {
+        fatalError(304, getForegroundInstance());
+    }
+    _enableRepaintInTimeSlice--;
 }
 
 void disableRepaintInTimeSlice() {
-    _enableRepaintInTimeSlice = 0;
+    _enableRepaintInTimeSlice++;
 }
 
 int repaintInTimeSliceEnabled() {
+    return _enableRepaintInTimeSlice == 0;
+}
+
+int repaintInTimeSliceEnabledD() {
     return _enableRepaintInTimeSlice;
 }
 
@@ -507,9 +517,8 @@ void repaintScreen(screen screen) {
 }
 
 void goToScreen(screen s) {
-    // we go to the screen ONLY if we are the foreground app,
-    // if not, a timeslice can change the screen while other app
-    // has the screen.
+    // if we are not the foreground instance, then we "save" the screen
+    // we want to go
     if (getForegroundInstance() == getActiveInstance() || !getForegroundInstance()) {
         _currentScreen = s;
         repaintCleanMiddle();

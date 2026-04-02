@@ -393,7 +393,7 @@ int zequals(const char* text, const char* pstr) {
 
 int portManagerId() {
     for (int i = 0; i < NUMBER_OF_DESCRIPTORS; i++) {
-        if (zequals(callGeneratedNameForType(i), PSTR("Ports Manager"))) {
+        if (zequals(callGeneratedNameForType(i), PSTR("Pin Manager"))) {
             return i;
         }
     }

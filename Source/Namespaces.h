@@ -19,7 +19,7 @@ namespace admin {
 }
 namespace desktop {
     void startScreen(void);
-    void goesToApp(int);
+    void goToApp(int);
 }
 
 #ifdef MEGA
@@ -40,6 +40,6 @@ namespace rules {
 int  pmDigitalRead(int port);
 void pmDigitalWrite(int port, int value);
 void pmAnalogWrite(int port, int value);
-int pmAnalogRead(int port);
+int  pmAnalogRead(int port);
 
 #endif

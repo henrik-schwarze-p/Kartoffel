@@ -57,17 +57,23 @@ void schedule() {
 
     // Poor man's multitasking
 
+    int fg = getForegroundInstance();
     for (int i = 0; i < numberOfInstances(); i++) {
         if (!usedInstance(i))
             continue;
         if (!statusForInstance(i, STATUS_OK)) {
             fatalError(6, i);
         }
-        // there should never be code inside the timeslice function,
-        // only exception is the clock, that draws each time
-        callTimeSlice(i, 1, type, _justOpened);
+        // there should never be repaint code inside the timeslice function,
+        // only exception is the clock, that draws each time.
+        // the time slice should at most call repaint()
+        int repaintBeforeTimeSlice = repaintState();
+        callTimeSlice(i, fg == i, type, _justOpened);
+        if (!repaintInTimeSliceEnabled() || getForegroundInstance() != i) {
+            setRepaintState(repaintBeforeTimeSlice);
+        }
     }
-    int fg = getForegroundInstance();
+
     //             if (fg) {
     //                 if (changed && insideRules()) {
     //                     switchContextToInstance(i);
@@ -75,6 +81,7 @@ void schedule() {
     //                     popContext();
     //                 }
     //             }
+
     if (repaintState()) {
         setPrintY(menuBarHeight + margin + 1);
         setPrintX(margin);
