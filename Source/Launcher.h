@@ -11,6 +11,6 @@
 
 void launchAll();
 void launchInstance(int instance);
-void launchDescriptor(int descriptor);
+int  launchDescriptor(int descriptor);
 
 #endif /* Launcher_h */

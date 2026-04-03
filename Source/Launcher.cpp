@@ -34,7 +34,7 @@ void launchAll() {
     unsigned char epromRandom1 = readByteFromEEPROM(EPROM_RANDOM + 1);
 
     // Case 0
-    // Random Bits match
+    // Random Bits match -> not first booting
     if (randomBits[0] == epromRandom0 && randomBits[1] == epromRandom1) {
         boardPrintln("Random Bits match");
         for (int i = 0; i < numberOfInstances(); i++)
@@ -71,11 +71,11 @@ void launchAll() {
     // No configuration, random bits dont match
 
     boardPrintln("Random bits don't match, writing data for the first time.");
-    boardPrintln("Date: 2025/01/01 13:30:05");
+    boardPrintln("Date: 2026/03/05 13:30:05");
 
-    setClockYear(25);
-    setClockMonth(1);
-    setClockDay(1);
+    setClockYear(26);
+    setClockMonth(3);
+    setClockDay(5);
     setClockHours(13);
     setClockMins(30);
     setClockSecs(5);
@@ -98,7 +98,7 @@ void launchAll() {
         launchDescriptor(i);
 }
 
-void launchDescriptor(int descriptor) {
+int launchDescriptor(int descriptor) {
     // Where are we going to write in the table?
 
     int newInstance = -1;
@@ -138,6 +138,7 @@ void launchDescriptor(int descriptor) {
     popContext();
 
     launchInstance(newInstance);
+    return newInstance;
 }
 
 void launchInstance(int instance) {

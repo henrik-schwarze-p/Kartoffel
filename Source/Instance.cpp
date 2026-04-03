@@ -80,10 +80,6 @@ unsigned char numberOfInstances() {
     return readByteFromEEPROM(EPROM_NUMBER_OF_INSTANCES);
 }
 
-unsigned char lastInstance() {
-    return readByteFromEEPROM(EPROM_NUMBER_OF_INSTANCES) - 1;
-}
-
 int getActiveInstance() {
     return activeInstance;
 }

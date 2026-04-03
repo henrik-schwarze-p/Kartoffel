@@ -68,7 +68,6 @@ int desktopId();
 
 int           usedInstance(int);
 unsigned char numberOfInstances();
-unsigned char lastInstance();
 int           getActiveInstance();
 void          popContext();
 void          switchContextToInstance(int instance);
