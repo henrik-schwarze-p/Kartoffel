@@ -247,13 +247,10 @@ void toolbarClicked(int param) {
     }
 }
 
-int  sss = 0;
 void drawToolbar(int forceRepaint) {
     int paint = (repaintState() & REPAINT_TOOLBAR) || forceRepaint;
     if (paint) {
         setColor(colorToolbar);
-        // if (sss++ % 2 == 0)
-        //   setColor(colorRed);
         fillRect(0, 196, horizontalResolution, 44);
     }
 
@@ -491,6 +488,7 @@ void repaintScreen(screen screen) {
         boardPrintln("Repainting CLEAN MIDDLE");
     }
     if (repaintState() & REPAINT_TOOLBAR) {
+        setColor(colorToolbar);
         fillRect(0, verticalResolution - toolbarHeight, horizontalResolution, toolbarHeight);
         boardPrintln("Repainting TOOLBAR");
     }
