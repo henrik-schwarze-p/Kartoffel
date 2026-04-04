@@ -57,7 +57,6 @@ void prepareInstanceTable() {
         setIdForInstance(i, 0);
         setStatusForInstance(i, STATUS_UNUSED);
     }
-    writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, MAX_NUMBER_OF_INSTANCES);
 }
 
 void setEnterScreen(void (*s)(), int instance) {
@@ -74,10 +73,6 @@ unsigned char getForegroundInstance() {
 
 void setForegroundInstance(unsigned char newInstance) {
     foregroundInstance = newInstance;
-}
-
-unsigned char numberOfInstances() {
-    return readByteFromEEPROM(EPROM_NUMBER_OF_INSTANCES);
 }
 
 int getActiveInstance() {
@@ -106,7 +101,7 @@ void writeInstanceStatus(int instance, int status) {
 }
 
 int getInstanceWithStatus() {
-    for (int i = 0; i < numberOfInstances(); i++)
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
         if (usedInstance(i) && !statusForInstance(i, STATUS_OK))
             return i;
     return -1;
@@ -158,9 +153,10 @@ int statusForInstance(int instance, int contains) {
 // would be called "firstInstanceForId"
 int instanceForId(int id) {
     // KAKA
-    for (int i = 0; i < numberOfInstances(); i++)
-        if (idForInstance(i) == id)
-            return i;
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
+        if (usedInstance(i))
+            if (idForInstance(i) == id)
+                return i;
     fatalError(10, id);
     return 0;
 }
@@ -203,7 +199,7 @@ void popContext() {
 
 // The only place where the active instance should be changed!
 void setActiveInstance(int instance) {
-    if (instance >= numberOfInstances() && instance != NO_INSTANCE_ACTIVE)
+    if (instance >= MAX_NUMBER_OF_INSTANCES && instance != NO_INSTANCE_ACTIVE)
         fatalError(14, instance);
     if (activeInstance != NO_INSTANCE_ACTIVE)
         serializeRegisteredVariables();
@@ -214,7 +210,7 @@ void setActiveInstance(int instance) {
 
 int numberOfVisibleInstances() {
     int r = 0;
-    for (int i = 0; i < numberOfInstances(); i++) {
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++) {
         if (!usedInstance(i))
             continue;
         r += typeForInstance(i) != desktopId();
@@ -223,7 +219,7 @@ int numberOfVisibleInstances() {
 }
 
 int visibleInstance(int index) {
-    for (int i = 0; i < numberOfInstances(); i++)
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
         if (usedInstance(i) && typeForInstance(i) != desktopId())
             if (--index < 0)
                 return i;
@@ -238,13 +234,13 @@ const char* instanceName(int instance) {
 
 // If no descriptor, the ExceptionApp is returned.
 uint16_t getDescriptorForInstance(uint8_t instance) {
-    if (instance >= numberOfInstances())
+    if (instance >= MAX_NUMBER_OF_INSTANCES)
         fatalError(15, instance);
     return readIntFromEEPROM(INSTANCE_TABLE_START + INSTANCE_OVERHEAD * instance + INSTANCE_ID);
 }
 
 int typeForInstance(uint16_t instance) {
-    if (instance >= numberOfInstances())
+    if (instance >= MAX_NUMBER_OF_INSTANCES)
         fatalError(15, instance);
     return readIntFromEEPROM(INSTANCE_TABLE_START + INSTANCE_OVERHEAD * instance + INSTANCE_ID);
 }
@@ -352,7 +348,7 @@ void callMonitor(int instance, int x, int y, int w, int h, int force) {
 // STATIC FUNCTIONS
 
 const char* nameForInstance(int instance) {
-    if (instance >= numberOfInstances())
+    if (instance >= MAX_NUMBER_OF_INSTANCES)
         fatalError(590, instance);
     return callGeneratedName(instance);
 }

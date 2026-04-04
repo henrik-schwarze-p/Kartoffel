@@ -58,7 +58,7 @@ void schedule() {
     // Poor man's multitasking
 
     int fg = getForegroundInstance();
-    for (int i = 0; i < numberOfInstances(); i++) {
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++) {
         if (!usedInstance(i))
             continue;
         if (!statusForInstance(i, STATUS_OK)) {

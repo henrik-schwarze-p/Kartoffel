@@ -109,7 +109,7 @@ void dumpChunks() {
     strcpy(chacha, "");
     koffset = 0;
 
-    int numberOfInstances = readByteFromEEPROM(2);
+    int instancesCardinality = readByteFromEEPROM(2);
 
     boardPrintln("EEPROM contents");
 
@@ -118,7 +118,7 @@ void dumpChunks() {
     kprint("Number of instancess");
     kprint(1);
 
-    for (int i = 0; i < numberOfInstances; i++) {
+    for (int i = 0; i < instancesCardinality; i++) {
         if (!statusForInstance(i, STATUS_UNUSED)) {
             kprint(instanceName(i));
             kprint(" ");

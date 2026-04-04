@@ -413,9 +413,10 @@ void message(const char* m, void (*a)(void)) {
 
 void message(const char* m, void (*a)(void), int clear) {
     // TODO
-    if (clear && (repaintState() & REPAINT_CLEAN_MIDDLE)) {
-        repaintCleanMiddle();
-    }
+    // if (clear && (repaintState() & REPAINT_CLEAN_MIDDLE)) {
+    //  repaintCleanMiddle();
+    //}
+    repaint();
     goToScreen(a);
     _message = m;
 }

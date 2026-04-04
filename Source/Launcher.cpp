@@ -33,22 +33,19 @@ void launchAll() {
     unsigned char epromRandom0 = readByteFromEEPROM(EPROM_RANDOM);
     unsigned char epromRandom1 = readByteFromEEPROM(EPROM_RANDOM + 1);
 
-    // Case 0
-    // Random Bits match -> not first booting
+    // Case 0: Random Bits match -> not first booting
     if (randomBits[0] == epromRandom0 && randomBits[1] == epromRandom1) {
-        boardPrintln("Random Bits match");
-        for (int i = 0; i < numberOfInstances(); i++)
+        boardPrintln("Not first booting");
+        for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
             if (usedInstance(i))
                 launchInstance(i);
         return;
     }
 
-    // Case 1
-    // Configuration in appStore, random bits are different
+    // Case 1: Configured in appStore
     // => Configuration + random bits written to EPROM
     if (readConf(0) != 0xFE) {
         boardPrintln("There is a configuration.");
-        // the random bytes differ, we will overwrite all the eprom
         boardPrintln("Configuration is going to be written to the EPROM.");
         setPrintY(20);
         drawCenteredString(PSTR("Configuring..."));
@@ -61,7 +58,9 @@ void launchAll() {
         writeByteToEEPROM(EPROM_RANDOM + 1, randomBits[1]);
         boardPrintln("Configuration written.");
 
-        for (int i = 0; i < numberOfInstances(); i++)
+        // Clock is configured
+
+        for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
             if (usedInstance(i))
                 launchInstance(i);
         return;
@@ -69,7 +68,6 @@ void launchAll() {
 
     // Case 2
     // No configuration, random bits dont match
-
     boardPrintln("Random bits don't match, writing data for the first time.");
     boardPrintln("Date: 2026/03/05 13:30:05");
 
@@ -82,7 +80,6 @@ void launchAll() {
 
     writeByteToEEPROM(EPROM_FORMATTED, (uint8_t)45);
     writeByteToEEPROM(EPROM_FORMATTED + 1, (uint8_t)41);
-    writeByteToEEPROM(EPROM_NUMBER_OF_INSTANCES, (uint8_t)0);
 
     writeByteToEEPROM(PERSISTANT_HEAP_ADDRESS + P_INSTANCE, UNUSED_CHUNK);
     writeByteToEEPROM(PERSISTANT_HEAP_ADDRESS + P_HANDLE, 0);
@@ -104,7 +101,7 @@ int launchDescriptor(int descriptor) {
     int newInstance = -1;
 
     // search for the first hole
-    for (int i = 0; i < numberOfInstances(); i++) {
+    for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++) {
         if (statusForInstance(i, STATUS_UNUSED)) {
             newInstance = i;
             break;

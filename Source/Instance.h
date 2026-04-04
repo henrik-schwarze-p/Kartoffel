@@ -3,7 +3,6 @@
 // The magic bytes to know if the EPROM is formatted or not. Hold also the
 // version.
 #define EPROM_FORMATTED 0
-#define EPROM_NUMBER_OF_INSTANCES 2
 #define INSTANCE_TABLE_START 3
 #define EPROM_RANDOM 93
 
@@ -66,20 +65,19 @@ screenPtr screenForInstance(int instance);
 int portManagerId();
 int desktopId();
 
-int           usedInstance(int);
-unsigned char numberOfInstances();
-int           getActiveInstance();
-void          popContext();
-void          switchContextToInstance(int instance);
-int           instanceForId(int);
-int           statusForInstance(int instance, int contains);
-void          setActiveInstance(int instance);
-int           getInstanceWithStatus();
-void          markInstanceAsUnused(int instance);
-int           getRepetitionForInstance(int instance);
-int           idForInstance(int offset);
-void          setIdForInstance(int address, int descriptor);
-void          writeInstanceStatus(int address, int status);
+int  usedInstance(int);
+int  getActiveInstance();
+void popContext();
+void switchContextToInstance(int instance);
+int  instanceForId(int);
+int  statusForInstance(int instance, int contains);
+void setActiveInstance(int instance);
+int  getInstanceWithStatus();
+void markInstanceAsUnused(int instance);
+int  getRepetitionForInstance(int instance);
+int  idForInstance(int offset);
+void setIdForInstance(int address, int descriptor);
+void writeInstanceStatus(int address, int status);
 
 int numberOfVisibleInstances();
 int visibleInstance(int index);

@@ -36,7 +36,7 @@ namespace portDialog {
 
     const char* getLabelForPort(int p, int digital) {
         const char* result = 0;
-        for (int i = 0; i < numberOfInstances(); i++)
+        for (int i = 0; i < MAX_NUMBER_OF_INSTANCES; i++)
             if (usedInstance(i) && callGetLabelForPort(i, p, digital)) {
                 if (result) {
                     result = PSTR("Many...");

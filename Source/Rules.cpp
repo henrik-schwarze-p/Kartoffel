@@ -39,12 +39,11 @@
  An Axon can be an Action, a Condition, NOT_FOUND or End.
  */
 
-const char *axonLabel(Axon a);
+const char* axonLabel(Axon a);
 
 // CONSTRUCTORS
 
-Axon notFoundAxon()
-{
+Axon notFoundAxon() {
     Axon a;
     a.notFound = 1;
     return a;
@@ -55,8 +54,7 @@ Axon notFoundAxon()
  Important: the struct does not corresponde 1:1 to the bytes.
  memcpy(address, axon) does not work!
  */
-Axon axonForAddress(int axonAddress)
-{
+Axon axonForAddress(int axonAddress) {
     // what is the first byte of the axon
     int head = readData(RULES_HANDLE, axonAddress);
 
@@ -79,8 +77,7 @@ Axon axonForAddress(int axonAddress)
     a.numberOfParams = numberOfParams(a);
     a.label = axonLabel(a);
 
-    for (int i = 0; i < a.numberOfParams; i++)
-    {
+    for (int i = 0; i < a.numberOfParams; i++) {
         int index = axonAddress + AX_PARAMS_OFFSET + i * sizeof(uint16_t);
         // we have to work under different architectures
         a.params[i] = readData(RULES_HANDLE, index) * 256 + readData(RULES_HANDLE, index + 1);
@@ -95,8 +92,7 @@ Axon axonForAddress(int axonAddress)
 /*
  A label for the axon to show it on screen.
  */
-const char *axonLabel(Axon a)
-{
+const char* axonLabel(Axon a) {
     if (a.isEnd)
         fatalError(1, 0);
     if (a.isCondition)
@@ -108,13 +104,11 @@ const char *axonLabel(Axon a)
  The number of paramteres is part of the name of the Axon.
  Never more than 5.
  */
-int numberOfParams(Axon a)
-{
-    const char *c = axonLabel(a);
-    int expectedNumberOfParameters = 0;
-    int i = 0;
-    while (pgm_read_byte(c + i))
-    {
+int numberOfParams(Axon a) {
+    const char* c = axonLabel(a);
+    int         expectedNumberOfParameters = 0;
+    int         i = 0;
+    while (pgm_read_byte(c + i)) {
         if (pgm_read_byte(c + i) == '[')
             expectedNumberOfParameters++;
         i++;
@@ -124,8 +118,7 @@ int numberOfParams(Axon a)
     return expectedNumberOfParameters;
 }
 
-Axon insertAxon(int index, int isCondition, int instance, int kind)
-{
+Axon insertAxon(int index, int isCondition, int instance, int kind) {
     Axon a;
     a.headValue = AX_IS_ACTION;
     if (isCondition)
@@ -149,24 +142,20 @@ Axon insertAxon(int index, int isCondition, int instance, int kind)
     return a;
 }
 
-InstanceKind instanceAndKindForGlobalIndex(int considerConditions, int globalAxonIndex)
-{
+InstanceKind instanceAndKindForGlobalIndex(int considerConditions, int globalAxonIndex) {
     InstanceKind ik;
-    const char *(*fn)(int, int) = callActionNames;
+    const char* (*fn)(int, int) = callActionNames;
     if (considerConditions)
         fn = callConditionNames;
     int acc = 0;
-    for (int instance = 0; instance < numberOfInstances(); instance++)
-    {
+    for (int instance = 0; instance < MAX_NUMBER_OF_INSTANCES; instance++) {
         if (!usedInstance(instance))
             continue;
-            
-        int index = 0;
-        const char *r = fn(instance, index);
-        while (r)
-        {
-            if (acc == globalAxonIndex)
-            {
+
+        int         index = 0;
+        const char* r = fn(instance, index);
+        while (r) {
+            if (acc == globalAxonIndex) {
                 ik.instance = instance;
                 ik.kind = index;
                 ik.found = 1;
@@ -181,18 +170,15 @@ InstanceKind instanceAndKindForGlobalIndex(int considerConditions, int globalAxo
     return ik;
 }
 
-Axon nextAxon(Axon a)
-{
+Axon nextAxon(Axon a) {
     if (a.isEnd)
         fatalError(2, 2);
     return axonForAddress(a.nextAddress);
 }
 
-Axon axonForIndex(int axonIndex)
-{
+Axon axonForIndex(int axonIndex) {
     Axon axon = axonForAddress(AX_FIRST_AXON_ADDRESS);
-    while (axonIndex > 0)
-    {
+    while (axonIndex > 0) {
         axon = nextAxon(axon);
         axonIndex--;
     }
@@ -201,27 +187,23 @@ Axon axonForIndex(int axonIndex)
 
 // WRITE AXON
 
-void writeAxon(Axon a)
-{
+void writeAxon(Axon a) {
     int writeAddress = a.address;
     setData(RULES_HANDLE, writeAddress++, a.headValue);
     if (a.isEnd)
         return;
     setData(RULES_HANDLE, writeAddress++, a.instance);
     setData(RULES_HANDLE, writeAddress++, a.kind);
-    for (int i = 0; i < a.numberOfParams; i++)
-    {
+    for (int i = 0; i < a.numberOfParams; i++) {
         setData(RULES_HANDLE, writeAddress++, a.params[i] / 256);
         setData(RULES_HANDLE, writeAddress++, a.params[i] % 256);
     }
 }
 
-int indexOfAxon(Axon a)
-{
+int indexOfAxon(Axon a) {
     Axon axon = axonForIndex(0);
-    int i = 0;
-    while (!axon.isEnd && a.address != axon.address)
-    {
+    int  i = 0;
+    while (!axon.isEnd && a.address != axon.address) {
         axon = nextAxon(axon);
         i++;
     }
@@ -230,12 +212,10 @@ int indexOfAxon(Axon a)
     return -1;
 }
 
-int numberOfAxons()
-{
+int numberOfAxons() {
     Axon a = axonForIndex(0);
-    int n = 0;
-    while (!a.isEnd)
-    {
+    int  n = 0;
+    while (!a.isEnd) {
         a = nextAxon(a);
         n++;
     }
@@ -244,41 +224,34 @@ int numberOfAxons()
 
 // Insert and delete
 
-void insertEmptyAction(int axonIndex)
-{
+void insertEmptyAction(int axonIndex) {
     insertAxon(axonIndex, 0, instanceForId(portManagerId()), 0);
 }
 
-void insertEmptyCondition(int axonIndex)
-{
+void insertEmptyCondition(int axonIndex) {
     insertAxon(axonIndex, 1, instanceForId(portManagerId()), 0);
 }
 
-void insertAction(int axonIndex, int globalAxonIndex)
-{
+void insertAction(int axonIndex, int globalAxonIndex) {
     InstanceKind ik = instanceAndKindForGlobalIndex(0, globalAxonIndex);
     insertAxon(axonIndex, 0, ik.instance, ik.kind);
 }
 
-void insertCondition(int axonIndex, int globalAxonIndex)
-{
+void insertCondition(int axonIndex, int globalAxonIndex) {
     InstanceKind ik = instanceAndKindForGlobalIndex(1, globalAxonIndex);
     insertAxon(axonIndex, 1, ik.instance, ik.kind);
 }
 
-void deleteAxon(int axonIndex)
-{
+void deleteAxon(int axonIndex) {
     Axon axon = axonForIndex(axonIndex);
     deleteDataSegment(RULES_HANDLE, axon.address, axon.length);
 }
 
 // LABELS
 
-int equals(const char *text, const char *pstr)
-{
+int equals(const char* text, const char* pstr) {
     int i = 0;
-    while (pgm_read_byte(pstr + i))
-    {
+    while (pgm_read_byte(pstr + i)) {
         if (pgm_read_byte(pstr + i) != pgm_read_byte(text + i))
             return 0;
         i++;
@@ -288,13 +261,10 @@ int equals(const char *text, const char *pstr)
 
 // "hi [A] and [B]", index == 0, compareTo=="A" returns true
 // "hi [A] and [B]", index == 1, compareTo=="B" returns true
-int toolbarIntForParameterX(const char *text, int index, const char *compareTo)
-{
+int toolbarIntForParameterX(const char* text, int index, const char* compareTo) {
     int i = 0;
-    while (pgm_read_byte(text + i))
-    {
-        if (pgm_read_byte(text + i) == '[')
-        {
+    while (pgm_read_byte(text + i)) {
+        if (pgm_read_byte(text + i) == '[') {
             i++;
             if (index == 0)
                 return equals(text + i, compareTo);
@@ -305,13 +275,10 @@ int toolbarIntForParameterX(const char *text, int index, const char *compareTo)
     return 0;
 }
 
-int toolbarIntForParameter(const char *text, int index, const char *toWhat)
-{
+int toolbarIntForParameter(const char* text, int index, const char* toWhat) {
     int i = 0;
-    while (pgm_read_byte(text + i))
-    {
-        if (pgm_read_byte(text + i) == '[')
-        {
+    while (pgm_read_byte(text + i)) {
+        if (pgm_read_byte(text + i) == '[') {
             i++;
             if (index == 0)
                 return equals(text + i, toWhat);
@@ -323,16 +290,12 @@ int toolbarIntForParameter(const char *text, int index, const char *toWhat)
     return 1;
 }
 
-int toolbarLabelForParameter1(const char *text, int index)
-{
+int toolbarLabelForParameter1(const char* text, int index) {
     int i = 0;
-    while (pgm_read_byte(text + i))
-    {
-        if (pgm_read_byte(text + i) == '[')
-        {
+    while (pgm_read_byte(text + i)) {
+        if (pgm_read_byte(text + i) == '[') {
             i++;
-            if (index == 0)
-            {
+            if (index == 0) {
                 return i;
             }
             index--;
@@ -343,16 +306,12 @@ int toolbarLabelForParameter1(const char *text, int index)
     return 0;
 }
 
-int toolbarLabelForParameter2(const char *text, int index)
-{
+int toolbarLabelForParameter2(const char* text, int index) {
     int i = 0;
-    while (pgm_read_byte(text + i))
-    {
-        if (pgm_read_byte(text + i) == ']')
-        {
+    while (pgm_read_byte(text + i)) {
+        if (pgm_read_byte(text + i) == ']') {
             i++;
-            if (index == 0)
-            {
+            if (index == 0) {
                 return i - 2;
             }
             index--;
@@ -362,63 +321,54 @@ int toolbarLabelForParameter2(const char *text, int index)
     return 0;
 }
 
-int thereIsAnActiveCC()
-{
+int thereIsAnActiveCC() {
     return readData(RULES_HANDLE, AX_ACTIVE) != 255;
 }
 
-Axon activeCC()
-{
+Axon activeCC() {
     int active = readData(RULES_HANDLE, AX_ACTIVE);
     if (active == 255)
         return notFoundAxon();
     return axonForIndex(active);
 }
 
-int indexOfActiveCC()
-{
+int indexOfActiveCC() {
     return readData(RULES_HANDLE, AX_ACTIVE);
 }
 
-void setActiveCC(Axon cc)
-{
+void setActiveCC(Axon cc) {
     setData(RULES_HANDLE, AX_ACTIVE, indexOfAxon(cc));
 }
 
 // KKK
 
-int evalCC(Axon cc)
-{
+int evalCC(Axon cc) {
     // The only way a conditions stops, is when another one is true
     if (activeCC().address == cc.address)
         return 0;
     Axon a = cc;
-    while (a.isCondition)
-    {
+    while (a.isCondition) {
         if (!callEvalCondition(a.instance, a.kind, a.params))
             return 0;
         a = nextAxon(a);
     }
     // The CC is true
     setActiveCC(cc);
-    while (a.isAction)
-    {
+    while (a.isAction) {
         callPerformAction(a.instance, a.kind, a.params);
         a = nextAxon(a);
     }
     return 1;
 }
 
-Axon firstCC()
-{
+Axon firstCC() {
     Axon a = axonForIndex(0);
     while (a.isAction)
         a = nextAxon(a);
     return a;
 }
 
-Axon nextCC(Axon cc)
-{
+Axon nextCC(Axon cc) {
     while (cc.isCondition)
         cc = nextAxon(cc);
     if (cc.isEnd)
@@ -428,16 +378,12 @@ Axon nextCC(Axon cc)
     return cc;
 }
 
-int evalRules()
-{
+int evalRules() {
     int changed = 0;
-    for (int inst = 0; inst < numberOfInstances(); inst++)
-    {
-        if (usedInstance(inst) && handleExists(inst, RULES_HANDLE))
-        {
+    for (int inst = 0; inst < MAX_NUMBER_OF_INSTANCES; inst++) {
+        if (usedInstance(inst) && handleExists(inst, RULES_HANDLE)) {
             switchContextToInstance(inst);
-            for (Axon cc = firstCC(); !cc.isEnd; cc = nextCC(cc))
-            {
+            for (Axon cc = firstCC(); !cc.isEnd; cc = nextCC(cc)) {
                 changed += evalCC(cc);
             }
             popContext();
@@ -446,21 +392,17 @@ int evalRules()
     return changed;
 }
 
-void instanceWasRemoved(int instance)
-{
-    for (int i = 0; i < numberOfAxons(); i++)
-    {
+void instanceWasRemoved(int instance) {
+    for (int i = 0; i < numberOfAxons(); i++) {
         Axon axon = axonForIndex(i);
-        if (axon.instance >= instance)
-        {
+        if (axon.instance >= instance) {
             axon.instance--;
             writeAxon(axon);
         }
     }
 }
 
-int rulesReference(int instance)
-{
+int rulesReference(int instance) {
     for (int i = 0; i < numberOfAxons(); i++)
         if (axonForIndex(i).instance == instance)
             return 1;
@@ -470,15 +412,12 @@ int rulesReference(int instance)
 /**
  Is there any instance that have rules that reference this instance?
  */
-int rulesUsingInstance(int instance)
-{
+int rulesUsingInstance(int instance) {
     int result = 0;
     int _chunk = firstChunkAddress();
-    while (_chunk)
-    {
+    while (_chunk) {
         if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK &&
-            chunkInstance(_chunk) != instance)
-        {
+            chunkInstance(_chunk) != instance) {
             switchContextToInstance(chunkInstance(_chunk));
             result += rulesReference(instance);
             popContext();
@@ -491,13 +430,10 @@ int rulesUsingInstance(int instance)
 /**
  The instance was removed. Indexes refering to other instances must be updated.
  */
-void updateRulesBecauseOfDeletionOfInstance(int instance)
-{
+void updateRulesBecauseOfDeletionOfInstance(int instance) {
     int _chunk = firstChunkAddress();
-    while (_chunk)
-    {
-        if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK)
-        {
+    while (_chunk) {
+        if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK) {
             switchContextToInstance(chunkInstance(_chunk));
             instanceWasRemoved(instance);
             popContext();
@@ -506,8 +442,7 @@ void updateRulesBecauseOfDeletionOfInstance(int instance)
     }
 }
 
-void createRulesChunk()
-{
+void createRulesChunk() {
     allocChunk(RULES_HANDLE, 2);
     setData(RULES_HANDLE, 0, 255);
     setData(RULES_HANDLE, AX_FIRST_AXON_ADDRESS, AX_END);
@@ -522,21 +457,17 @@ void createRulesChunk()
 #include <string.h>
 #endif
 
-int axonDumpEq(const char *c)
-{
-    char *r = (char *)malloc(1000);
-    char *s = (char *)malloc(100);
+int axonDumpEq(const char* c) {
+    char* r = (char*)malloc(1000);
+    char* s = (char*)malloc(100);
     strcpy(r, "");
-    for (int i = 0; i < 1000; i++)
-    {
+    for (int i = 0; i < 1000; i++) {
         snprintf(s, 99, "%02x", readData(RULES_HANDLE, i));
         strcat(r, s);
         strcat(r, " ");
-        if (readData(RULES_HANDLE, i) == 0xED)
-        {
+        if (readData(RULES_HANDLE, i) == 0xED) {
             int eq = !strcmp(c, r);
-            if (!eq)
-            {
+            if (!eq) {
                 boardPrintln("COMPARISION FAILED");
                 boardPrint("Expected: ");
                 boardPrintln(c);
@@ -549,8 +480,7 @@ int axonDumpEq(const char *c)
     return 0;
 }
 
-void testRules()
-{
+void testRules() {
     int diceInstance = 9;
     int pinManager = 14;
     int admin = 1;
