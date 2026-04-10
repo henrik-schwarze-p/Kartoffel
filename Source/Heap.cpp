@@ -102,9 +102,9 @@ int allocHeap(int handle, int size) {
     setHeapData(_head + H_HANDLE, handle);
     setHeapData(_head + H_LEN, size);
     setHeapData(_head + H_OVERHEAD + size, UNUSED_HEAP);
-    if (size)
-        setHeapData(_head + H_DATA, 0);
-    return handle;
+    for (int i = 0; i < size; i++)
+        setHeapData(_head + H_DATA + i, 0);
+    return 1;
 }
 
 int heapHead(int heapHandle) {
@@ -131,7 +131,8 @@ int heapSize(int heapHandle) {
 void freeHeap(int heapHandle) {
     int head = heapHead(heapHandle);
     int size = heapData[head + H_LEN];
-    for (int i = head; i < HEAP_SIZE - size - H_OVERHEAD; i++)
+    int end = heapEnd();
+    for (int i = head; i <= end; i++)
         setHeapData(i, heapData[i + size + H_OVERHEAD]);
 }
 
@@ -209,6 +210,6 @@ void deleteHeapFragment(int handle, int address, int delta) {
     int begin = head + H_OVERHEAD + address;
     int end = heapEnd();
     for (int i = begin; i < end - delta + 1; i++)
-        heapData[i] = heapData[i + delta];
+        setHeapData(i, heapData[i + delta]);
     heapData[head + H_LEN] -= delta;
 }

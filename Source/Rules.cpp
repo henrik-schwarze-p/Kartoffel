@@ -46,6 +46,7 @@ const char* axonLabel(Axon a);
 Axon notFoundAxon() {
     Axon a;
     a.notFound = 1;
+    a.address = 0;  // not really needed...
     return a;
 }
 
@@ -318,7 +319,7 @@ int toolbarLabelForParameter2(const char* text, int index) {
         }
         i++;
     }
-    return 0;
+    return -1;
 }
 
 int thereIsAnActiveCC() {
@@ -392,16 +393,6 @@ int evalRules() {
     return changed;
 }
 
-void instanceWasRemoved(int instance) {
-    for (int i = 0; i < numberOfAxons(); i++) {
-        Axon axon = axonForIndex(i);
-        if (axon.instance >= instance) {
-            axon.instance--;
-            writeAxon(axon);
-        }
-    }
-}
-
 int rulesReference(int instance) {
     for (int i = 0; i < numberOfAxons(); i++)
         if (axonForIndex(i).instance == instance)
@@ -425,21 +416,6 @@ int rulesUsingInstance(int instance) {
         _chunk = nextChunkAddress(_chunk);
     }
     return result;
-}
-
-/**
- The instance was removed. Indexes refering to other instances must be updated.
- */
-void updateRulesBecauseOfDeletionOfInstance(int instance) {
-    int _chunk = firstChunkAddress();
-    while (_chunk) {
-        if (chunkHandle(_chunk) == RULES_HANDLE && chunkInstance(_chunk) != UNUSED_CHUNK) {
-            switchContextToInstance(chunkInstance(_chunk));
-            instanceWasRemoved(instance);
-            popContext();
-        }
-        _chunk = nextChunkAddress(_chunk);
-    }
 }
 
 void createRulesChunk() {

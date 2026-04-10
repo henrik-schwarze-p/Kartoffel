@@ -69,10 +69,11 @@ namespace aqualog {
         allocChunk(LOG_HANDLE, memory);
         setData(LOG_HANDLE, LOG_VERSION, 0x0A + size - 1);
         setData(LOG_HANDLE, 1, LOG_START);
-        setData(LOG_HANDLE, 2, epochSecs() / 251 / 251 / 251);
-        setData(LOG_HANDLE, 3, epochSecs() / 251 / 251 % 251);
-        setData(LOG_HANDLE, 4, epochSecs() / 251 % 251);
-        setData(LOG_HANDLE, 5, epochSecs() % 251);
+        unsigned long now = epochSecs();
+        setData(LOG_HANDLE, 2, now / 251 / 251 / 251);
+        setData(LOG_HANDLE, 3, now / 251 / 251 % 251);
+        setData(LOG_HANDLE, 4, now / 251 % 251);
+        setData(LOG_HANDLE, 5, now % 251);
         setData(LOG_HANDLE, 6, LOG_END);
     }
 
@@ -123,8 +124,8 @@ namespace aqualog {
 
     unsigned long lastLogInSeconds() {
         int offset = endOffset();
-        return logValue(offset, -4) * 251 * 251 * 251 + logValue(offset, -3) * 251 * 251 + logValue(offset, -2) * 251 +
-               logValue(offset, -1);
+        return (unsigned long)logValue(offset, -4) * 251 * 251 * 251 + (unsigned long)logValue(offset, -3) * 251 * 251 +
+               (unsigned long)logValue(offset, -2) * 251 + logValue(offset, -1);
     }
 
     void jumpToTailOfLastLog() {
@@ -154,12 +155,12 @@ namespace aqualog {
             currentOffset -= 3;
         } else if ((lastByte & 224) == 192) {
             *event = logValue(-3);
-            delta = (logValue(0) - 192) * 251 * 251 + logValue(-1) * 251 + logValue(-2);
+            delta = (unsigned long)(logValue(0) - 192) * 251 * 251 + (unsigned long)logValue(-1) * 251 + logValue(-2);
             currentOffset -= 4;
         } else if ((lastByte & 240) == 224) {
             *event = logValue(-4);
-            delta =
-                (logValue(0) - 224) * 251 * 251 * 251 + logValue(-1) * 251 * 251 + logValue(-2) * 251 + logValue(-3);
+            delta = (unsigned long)(logValue(0) - 224) * 251 * 251 * 251 + (unsigned long)logValue(-1) * 251 * 251 +
+                    (unsigned long)logValue(-2) * 251 + logValue(-3);
             currentOffset -= 5;
         } else
             fatalError(41, lastByte);
@@ -211,7 +212,8 @@ namespace aqualog {
             return;
         ensure10BytesBetweenBeginAndEnd();
         currentOffset = endOffset();
-        unsigned long delta = epochSecs() - lastLogInSeconds();
+        unsigned long now = epochSecs();
+        unsigned long delta = now - lastLogInSeconds();
         int           n = -4;
         setLogValue(currentOffset, n++, event);
         setLogValue(currentOffset, n++, delta % 251);
@@ -219,20 +221,20 @@ namespace aqualog {
             // life is easy for numbers less than 128... I would be one.
         } else if (delta <= 251 * 63)
             setLogValue(currentOffset, n++, delta / 251 + 128);
-        else if (delta <= 251 * 251 * 31) {
+        else if (delta <= 251UL * 251 * 31) {
             setLogValue(currentOffset, n++, delta / 251 % 251);
             setLogValue(currentOffset, n++, delta / 251 / 251 + 192);
-        } else if (delta <= 251 * 251 * 251 * 15) {
+        } else if (delta <= 251UL * 251 * 251 * 15) {
             setLogValue(currentOffset, n++, delta / 251 % 251);
             setLogValue(currentOffset, n++, delta / 251 / 251 % 251);
             setLogValue(currentOffset, n++, delta / 251 / 251 / 251 + 224);
         } else
             fatalError(42, (int)delta);
 
-        setLogValue(currentOffset, n++, epochSecs() / 251 / 251 / 251);
-        setLogValue(currentOffset, n++, epochSecs() / 251 / 251 % 251);
-        setLogValue(currentOffset, n++, epochSecs() / 251 % 251);
-        setLogValue(currentOffset, n++, epochSecs() % 251);
+        setLogValue(currentOffset, n++, now / 251 / 251 / 251);
+        setLogValue(currentOffset, n++, now / 251 / 251 % 251);
+        setLogValue(currentOffset, n++, now / 251 % 251);
+        setLogValue(currentOffset, n++, now % 251);
         setLogValue(currentOffset, n, 0xFE);
     }
 
@@ -283,7 +285,7 @@ namespace aqualog {
     }
 
     void down(int param) {
-        if (offset < numberOfLogs())
+        if (offset < numberOfLogs() - 1)
             offset++;
         goToScreen(showLog);
     }
@@ -332,7 +334,7 @@ namespace aqualog {
             formatter(event);
             println();
         }
-        toolbarAdd(standard, 1 > 0, MINI_ICON_UP, up);
+        toolbarAdd(standard, offset > 0, MINI_ICON_UP, up);
         toolbarAdd(MINI_ICON_DOWN, down);
         toolbarAddScreenBack(home);
     }

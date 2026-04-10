@@ -13,8 +13,7 @@
 
 #include "stdint.h"
 
-void updateRulesBecauseOfDeletionOfInstance(int instance);
-int  rulesUsingInstance(int instance);
+int rulesUsingInstance(int instance);
 
 typedef struct StructAxon {
     unsigned char headValue;
@@ -60,7 +59,6 @@ InstanceKind instanceAndKindForGlobalIndex(int considerConditions, int globalAxo
 int          toolbarLabelForParameter1(const char*, int index);
 int          toolbarLabelForParameter2(const char*, int index);
 int          rulesReference(int instance);
-void         instanceWasRemoved(int instance);
 int          thereIsAnActiveCC();
 int          indexOfActiveCC();
 

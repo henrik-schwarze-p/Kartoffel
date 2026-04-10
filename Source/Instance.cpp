@@ -177,8 +177,6 @@ void markInstanceAsUnused(int instance) {
     popContext();
 
     setStatusForInstance(instance, STATUS_UNUSED);
-
-    // todo-> updateRulesBecauseOfDeletionOfInstance(instance);
 }
 
 // Pushes the active instance and makes a context switch to instance

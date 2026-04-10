@@ -31,8 +31,6 @@
 // All chunks have an absoute address, that is used by most functions.
 // I denote <chunkAddress> as the chunk starting at address chunkAddress.
 
-
-
 /*
  * To iterate over chunks
  */
@@ -44,8 +42,8 @@ int firstChunkAddress() {
 
 // the address of the next chunk relative to <chunkAddress>
 int nextChunkAddress(int chunkAddress) {
-    int next= chunkAddress + chunkDataSize(chunkAddress) + P_DATA;
-    if (next==EPROM_SIZE) {
+    int next = chunkAddress + chunkDataSize(chunkAddress) + P_DATA;
+    if (next == EPROM_SIZE) {
         return 0;
     }
     return next;
@@ -72,10 +70,9 @@ int chunkDataSize(int chunkAddress) {
     return readIntFromEEPROM(chunkAddress + P_SIZE);
 }
 
-
 /*
-* Free chunks for an instance
-*/
+ * Free chunks for an instance
+ */
 
 // Frees all chunks for the active instance and merge the unused
 void freeAllChunksForActiveInstance() {
@@ -88,12 +85,10 @@ void freeAllChunksForActiveInstance() {
     mergeUnusedChunks();
 }
 
-
-
 /*
-* From here on, we only use handles
-* Handle is used as an abbreviation for "chunk with the given hundle"
-*/
+ * From here on, we only use handles
+ * Handle is used as an abbreviation for "chunk with the given handle"
+ */
 
 // chunk data size for a given handle for the active instance
 unsigned int dataSizeForHandle(int handle) {
@@ -162,7 +157,8 @@ void allocChunk(int handle, int dataSize) {
     int recycledChunkDataSize = 0;
     while (chunkAddress) {
         recycledChunkDataSize = chunkDataSize(chunkAddress);
-        if (chunkUnused(chunkAddress) && dataSize + 2 * P_DATA <= recycledChunkDataSize)  // overhead + overhead for empty chunk
+        if (chunkUnused(chunkAddress) &&
+            dataSize + 2 * P_DATA <= recycledChunkDataSize)  // overhead + overhead for empty chunk
             break;
         chunkAddress = nextChunkAddress(chunkAddress);
     }
@@ -181,10 +177,9 @@ void allocChunk(int handle, int dataSize) {
     writeIntToEEPROM(u + P_SIZE, (unsigned int)(recycledChunkDataSize - dataSize - P_DATA));
 
     // handy sometimes, we initialize the data
-    if (dataSize)
-        setData(handle, 0, 0);
+    for (int i = 0; i < dataSize; i++)
+        setData(handle, i, 0);
 }
-
 
 // Merges contiguous unused chunks.
 // Not very efficient from the point of view of the algorithm, but it is more
@@ -219,6 +214,9 @@ void freeChunk(int handle) {
 
 // resizes a chunk, not used for the time being
 // throws error if not enough space
+// not used, but consider When newSize > oldSize, the loop
+// reads bytes beyond the old chunk's data. The copy should
+// only go up to min(oldSize, newSize).
 void resizeChunk(unsigned int handle, int newSize) {
     allocChunk(TMP_HANDLE, newSize);
 
@@ -228,14 +226,12 @@ void resizeChunk(unsigned int handle, int newSize) {
     // copy data
     for (int i = 0; i < newSize; i++)
         writeByteToEEPROM(newChunkAddress + P_DATA + i, readByteFromEEPROM(existingChunkAddress + P_DATA + i));
-    
-    // old handle markes as unused
+
+    // old handle marked as unused
     freeChunk(handle);
 
     writeByteToEEPROM(newChunkAddress + P_HANDLE, handle);
 }
-
-
 
 // DATA ACCESSORS
 // We only expose the handles of the active instance as arrays, no chunk addresses are exposed
@@ -269,10 +265,10 @@ uint32_t readDataLong(int offset) {
 float readDataFloat(int handle, int offset) {
     float          result = 0.0;
     unsigned char* bytes = (unsigned char*)&result;
-    bytes[0] = readMainData(offset);
-    bytes[1] = readMainData(offset + 1);
-    bytes[2] = readMainData(offset + 2);
-    bytes[3] = readMainData(offset + 3);
+    bytes[0] = readData(handle, offset);
+    bytes[1] = readData(handle, offset + 1);
+    bytes[2] = readData(handle, offset + 2);
+    bytes[3] = readData(handle, offset + 3);
     return result;
 }
 
@@ -314,7 +310,7 @@ void setDataMainFloat(int offset, float value) {
 // the segment starts at offset, and consists of lenght bytes
 void deleteDataSegment(int handle, int offset, int length) {
     int chunkAddress = chunkAddressForHandle(handle);
-    int size =  chunkDataSize(chunkAddress);
+    int size = chunkDataSize(chunkAddress);
     int newSize = size - length;
 
     allocChunk(TMP_HANDLE, size - length);
@@ -328,7 +324,7 @@ void deleteDataSegment(int handle, int offset, int length) {
     }
 
     freeChunk(handle);
-    
+
     writeByteToEEPROM(tmpChunkAddress + P_HANDLE, handle);
 }
 
